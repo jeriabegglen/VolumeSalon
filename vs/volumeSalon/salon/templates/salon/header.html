@@ -1,0 +1,31 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{ title }}</title>
+        <link href="{% static 'salon/css/style.css' %}" rel="stylesheet" />
+    </head>
+    <body>
+        <header>
+            Volume Salon
+            <div id="loginInfo">
+            {% if user.is_authenticated %}
+                Welcome, {{ user.first_name }} |
+                <a href="{% url 'logout' %}">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+        </div>
+        </header>
+
+        <nav>
+            <ul>
+                <!--<li><a href="/index/">Home</a></li>
+                <li><a href="/salon/">View all clients</a></li>
+                <li><a href="/addClient/">Add New Client</a></li>-->
+            </ul>
+        </nav>

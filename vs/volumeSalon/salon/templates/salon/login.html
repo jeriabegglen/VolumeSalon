@@ -1,0 +1,33 @@
+{% include 'clients/header.html' %}
+
+<div id="main" style="height:300px;">
+    <h1>{{ heading }}</h1>
+    <p>
+
+    <form action="{% url 'loginProcess' %}" method="post" autocomplete="off">
+        {% csrf_token %}
+        <table style="width:auto;">
+            {% if errors %}
+        <tr><td colspan="2"><ul>
+            {% for error in errors %}
+                <li style="color:red;">{{ error }}</li>
+            {% endfor %}
+        </ul></td>
+                </tr>
+        {% endif %}
+            <tr><th>Username: </th>
+                <td><input type="text" name="username" id="username" required placeholder="Username"></td>
+            </tr>
+            <tr>
+                <th>Password: </th>
+                <td><input type="password" name="password" id="password"></td>
+            </tr>
+            <tr>
+                <td></td><td><input type="submit" value="Login"></td>
+            </tr>
+        </table>
+    </form>
+    </p>
+</div>
+
+{% include 'clients/footer.html' %}

@@ -1,0 +1,32 @@
+{% load humanize %}
+
+{% include 'salon/header.html' %}
+
+<div id="main" style="height:300px;">
+    <h1>{{ heading }}</h1>
+    {% if content %}
+        <p> {{ content }} </p>
+    {% endif %}
+    {% if clients_list %}
+        <table style="width:95%">
+            <tr>
+                <th>Name</th>
+                <th>Phone Number</th>
+                <th>Notes</th>
+                <th colspan="2">Tools</th>
+            </tr>
+            {% for client in clients_list %}
+                <tr>
+                    <td>{{ client.client_name }}</td>
+                    <td>{{ client.phone_number }}</td>
+                    <td>{{ client.notes }}</td>
+                    <td><a href="{% url 'client' client.id %}">Edit</a></td>
+                    <td><a href="{% url 'delete' client.id %}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p><strong>No clients are available.</strong></p>
+    {% endif %}
+</div>
+{% include 'salon/footer.html' %}
