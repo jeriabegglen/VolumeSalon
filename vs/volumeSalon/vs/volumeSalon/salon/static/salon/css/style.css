@@ -1,0 +1,219 @@
+
+@import url(https://fonts.googleapis.com/css?family=Open+Sans|Candal);
+
+body
+{
+	background-color: #CFCFCF;
+	color: #000;
+	width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+	font-family: "Open Sans", "Times New Roman", serif;
+	font-size: 0.8em;
+	margin-top: 0px;
+
+}
+
+header
+{
+    font-family: Candal, "Fira Sans", "Dancing Script";
+    font-size: 3em;
+    height: 150px;
+    background-color: #28487e;
+	text-shadow:  -5px 5px 1px #675454;
+	color: white;
+	text-align: center;
+    background-image: url("../img/SpaceNeedle.jpeg");
+	background-size: 100% 100%;
+	line-height: 100px;
+	opacity: 0.8;
+}
+
+nav
+{
+	background-color: #FFA200;
+	height: 30px;
+	font-size: 1.2em;
+	line-height: 30px;
+	text-align: center;
+}
+
+nav ul
+{
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+nav ul li
+{
+	/*display: inline;*/
+	float: left;
+}
+
+nav ul li a:link, nav ul li a:visited
+{
+	width: 120px;
+	display: block;
+	/*background-color: #B24700;*/
+	margin-left: 0px;
+	text-decoration: none;
+	text-align: center;
+	color: white;
+}
+
+nav ul li a:hover
+{
+	/*background-color: black;*/
+	color: #E8E8E8;
+	border-bottom: 2px solid black;
+}
+
+#current
+{
+	background-color: white;
+	color: black;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+
+#menu
+{
+	display:table;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+#main
+{
+	background-color: #FFF;
+	padding: 8px;
+}
+
+p
+{
+	text-align: left;
+	text-indent: 20px;
+	margin-bottom: 0px;
+}
+
+footer
+{
+	background-color: #000;
+	height: 65px;
+	color: #FFF;
+	text-align: center;
+	margin-top: 0px;
+	padding-top: 10px;
+}
+
+div#copy
+{
+	text-align: right;
+	font-size: 0.7em;
+	line-height: 75px;
+	padding-right: 10px;
+}
+
+div#loginInfo
+{
+	text-align: right;
+	font-size: 16px;
+	/*line-height: 75px;*/
+	padding-right: 10px;
+	position: relative;
+	top: -130px;
+	right: 10px;
+	color: white;
+	font-family: "Open Sans", "Times New Roman", serif;
+	text-shadow:  0px 0px 0px #675454;
+}
+
+div#loginInfo a, div#loginInfo a:active, div#loginInfo a:visited
+{
+	color: white;
+}
+
+div#loginInfo a:hover
+{
+	color: red;
+}
+
+#yellowText
+{
+	color: yellow;
+	background-color: black;
+	font-size: 16px;
+}
+
+.centerText
+{
+	text-align: center;
+}
+
+.navyText
+{
+	color: navy;
+	background-color: orange;
+}
+
+ol
+{
+	list-style-type: upper-roman;
+}
+
+table
+{
+	width: 80%;
+	border-collapse: collapse;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+table, td, th
+{
+	border-style: solid;
+	border-width: 0px;
+	border-color: red;
+}
+
+tr.heading
+{
+	background-color: black;
+	color: white;
+}
+
+tr:nth-child(even)
+{
+	background-color: #D6DAE7;
+}
+
+td.rightAlign
+{
+	text-align: right;
+}
+
+h2
+{
+	margin-top: 0px;
+}
+
+#boxShadow
+{
+	width: 100px;
+	background-color: #324B00;
+	box-shadow: 5px 5px black;
+	color: white;
+	padding-left: 10px;
+}
+
+footer a:link, footer a:visited
+{
+	color: white;
+	text-decoration: none;
+}
+
+footer a:hover
+{
+	text-decoration: underline;
+}
