@@ -1,0 +1,54 @@
+{% extends 'salon/base.html' %}
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+    <div class="col-sm-4">
+        <div id="form_container">
+            <h3>Log In</h3>
+            <hr>
+            {% if errorMessage %}
+                <div class="alert alert-danger fade-in form-group center" role="alert">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <span class="sr-only">Error:</span>
+                    {{ error_message |safe}}
+                </div>
+            {% endif %}
+            <form class="form form-inline" role="form" action="{% url 'login' %}" method="post">
+                {% csrf_token %}
+                <table class="form">
+                    <tr>
+                        <td><label for="username">Username:</label></td>
+                        <td>
+                            <input type="text" class="form-control" name="username"
+                                   placeholder="Email" value="{{ email }}" required>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="password">Password:</label></td>
+                        <td>
+                            <input type="password" class="form-control" name="password"
+                                   placeholder="Password" value="{{ password }}" required>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">&nbsp;<td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td><button type="submit" class="btn btn-success">Log In</button> or
+                            <a href="{% url 'signup' %}">Sign up</a></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td><a href="#">Forgot Password?</a></td>
+                    </tr>
+                </table>
+            </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

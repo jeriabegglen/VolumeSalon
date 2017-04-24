@@ -1,0 +1,22 @@
+{% extends 'salon/base.html' %}
+{% block title %}{{ pageTitle }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="page-header">Client List</h1>
+    <div class="row">
+        {% for client in clients %}
+        <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+                <div class="caption">
+                    <h3>{{ client.name }}</h3>
+                        </div>
+                    <p><a href="#" class="btn btn-success" role="button">
+                            Add to Cart</a> <a href="{{ client.get_absolute_url }}" class="btn btn-default"
+                        role="button">Detail</a></p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

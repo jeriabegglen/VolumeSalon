@@ -1,0 +1,19 @@
+{% extends 'salon/base.html' %}
+{% block title %}{{ pageTitle }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+        <div class="media-body">
+            <h3 class="media-heading">{{ client.name }}</h3>
+            <ul class="list-group">
+                <li class="list-group-item">Client: {{ client.name }}</li>
+                <li class="list-group-item">
+                    <a href="#" class="btn btn-success" role="button">
+                            Add to Cart</a>
+                    <a href="#" class="btn btn-default"
+                            role="button">Save</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
