@@ -1,0 +1,33 @@
+{% extends 'salon/base.html' %}
+{% include "floppyforms/input.html" %}
+
+{% block jumbotron %}
+<div class="jumbotron">
+  <div class="container text-center">
+    <h1>{{ heading }}</h1>
+    <p>{{ mission }}</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Checkout</h3>
+<div class="container">
+  <form action="/pos/" method="POST">
+    <table>
+      <tr><td>Services: </td>
+        <td>
+          <select name="dropdown1">
+            {% for service in all_services %}
+              <option value=""{{ service.service }}">{{ service.service }}"</option>
+            {% endfor %}
+          </select>
+        </td>
+      <td><input type="submit" value="Select Service" /></td></tr>
+
+    </table>
+
+
+  </form>
+
+{% endblock %}

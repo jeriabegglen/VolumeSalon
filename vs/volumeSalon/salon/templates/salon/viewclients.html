@@ -1,0 +1,44 @@
+{% extends 'salon/base.html' %}
+
+{% block jumbotron %}
+<div class="jumbotron">
+  <div class="container text-center">
+    <h1>{{ heading }}</h1>
+    <p>{{ mission }}</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>  Danielle's Clients</h3>
+
+    <table style="width:95%">
+        <tr>
+            <th>Name</th>
+            <th>Phone Number</th>
+            <th>Notes</th>
+        </tr>
+        {% for client in all_clients %}
+            <tr>
+                <td>{{ client.name }}</td>
+                <td>{{ client.phone_number }}</td>
+                <td>{{ client.notes }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+<ul>
+
+  <div class="container">
+    <form action="/clients/" method="GET">
+      <div class='row'>
+        <h4>Add new client</h4>
+        <div class='col-xs-2'><input type='text' class='form-control' name='cname' placeholder='Client Name'/></div>
+        <div class='col-xs-2'><input type='text' class='form-control' name='cphone' placeholder='Phone Number'/></div>
+        <div class='col-xs-5'><input type='text' class='form-control' name='cnotes' placeholder='Notes'/></div>
+        <div class='col-xs-3'><input type="submit" class='btn btn-primary' value='Add new client'/></div>
+      </div>
+    </form>
+    <div class="row">
+
+{% endblock %}

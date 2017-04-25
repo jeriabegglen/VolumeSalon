@@ -1,0 +1,28 @@
+{% extends 'salon/base.html' %}
+{% block title %}{{ pageTitle }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ panelTitle }}</h3>
+        </div>
+        <div class="panel-body">
+            {% if errorMessage %}
+                <div class="alert alert-danger fade-in form-group center" role="alert">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <span class="sr-only">Error:</span>
+                    {{ errorMessage |safe}}
+                </div>
+            {% endif %}
+            <p>Please signup using the following form:</p>
+            <form action='.' method="post">
+                {% csrf_token %}
+                <table>
+                {{ accountForm.as_table }}
+                </table>
+                <p><button type="submit" class="btn btn-success">Signup</button></p>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
