@@ -13,14 +13,34 @@
 {% block content %}
 <h3>Checkout</h3>
 <div class="container">
-  <form action="/pos/" method="POST">
+  <form action="/POS/" method="get">
+    {% if new_price %}
+      <input type=text name="new_price" value="{{ new_price }}"/>
+    {% else %}
+      <input type=text name="new_price" value="{{ sp.starting_price }}"/>
+    {% endif %}
+
+  <input type=hidden name="service" value="{{ sp.service }}"/>
+  <input type=submit value="new price"/>
+</form>
+  <form action="/POS/" method="GET">
     <table>
       <tr><td>Services: </td>
         <td>
           <select name="dropdown1">
-            {% for service in all_services %}
-              <option value=""{{ service.service }}">{{ service.service }}"</option>
-            {% endfor %}
+            {% if sp %}
+              {% for service in all_services %}
+                {% if sp.starting_price == service.starting_price %}
+                  <option selected=selected value="{{ service.service }}">{{ service.service }}</option>
+                {% else %}
+                    <option value="{{ service.service }}">{{ service.service }}</option>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              {% for service in all_services %}
+                <option value="{{ service.service }}">{{ service.service }}</option>
+              {% endfor %}
+            {% endif %}
           </select>
         </td>
       <td><input type="submit" value="Select Service" /></td></tr>
@@ -29,5 +49,6 @@
 
 
   </form>
+
 
 {% endblock %}

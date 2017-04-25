@@ -22,12 +22,33 @@ def index(request):
 @login_required(login_url='/login/')
 def POS(request):
     all_services = Service.objects.all()
-    cname = request.POST.get('dropdown1')
+    if request.GET.get('dropdown1'):
+        s = Service.objects.filter(service=request.GET["dropdown1"])
+        context = {'nbar': 'home',
+                    'heading': 'Volume Salon POS',
+                    'mission': 'Making you beautiful',
+                    'sp': s[0],
+                    'all_services': all_services
+                }
+        return render(request, 'salon/pos.html', context)
+    if request.GET.get('service'):
+        s = Service.objects.filter(service=request.GET["service"])
+        print(request.GET["new_price"])
+        context = {'nbar': 'home',
+                    'heading': 'Volume Salon POS',
+                    'mission': 'Making you beautiful',
+                    'sp': s[0],
+                    'all_services': all_services,
+                    'new_price': request.GET["new_price"]
+                }
+        return render(request, 'salon/pos.html', context)
+    '''cname = request.POST.get('dropdown1')'''
     context = {'nbar': 'home',
                 'heading': 'Volume Salon POS',
                 'mission': 'Making you beautiful',
                 'all_services': all_services
             }
+
     return render(request, 'salon/pos.html', context)
 
 @login_required(login_url='/login/')
