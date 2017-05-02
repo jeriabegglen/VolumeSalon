@@ -1,0 +1,1709 @@
+<script type="text/javascript" src="state_countryjs.asp"></script>
+<style>
+.overlay {
+	/*background-image: url(assets/templates/common/images/transparent.png);*/
+		background-color: #fff;
+	filter:alpha(opacity=80);	/* Transparency */
+	opacity:0.8;	/* Transparency */
+}
+#overlay {
+	background-image: url(assets/templates/common/images/transparent.png);
+}
+* html #overlay {
+	background-image: url(assets/templates/common/images/pixel_trans.gif);
+ filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src="assets/templates/common/images/transparent.png", sizingMethod="scale");
+}
+#simplemodal-overlay {background-color:#000;}
+</style>
+
+<script type="text/javascript">
+	var scity="";
+	var szip="";
+	var scountry="";
+	var sstate = "";
+	var saddress="";
+	var addrchange="";
+	var ajax_request_progress=0;
+	var selectedShipId=0;
+	var useAddressValidator = "[useAddressValidator]";
+	var validShippingAddress = 0;
+	var lastShippingAddress = "";
+
+	if (typeof jQuery == 'undefined') {
+	    document.write("<script type=\"text/javascript\" src=\"assets/templates/common/js/jquery.min.js\"></" + "script>");
+	}
+
+	jQuery.getScript('assets/templates/common/js/simplemodal.js');
+
+	function get_Element(i)
+	{
+		return document.getElementById(i) || document.getElementsByName(i).item(0);
+	}
+
+	function addressValidatorContinue(type)
+	{
+	    jQuery.modal.close();
+	    remove_overlay("billing_info");
+	    if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null){
+	        var sameAsBilling = get_Element('sameAsBilling').checked;}
+	    else{
+	        var sameAsBilling = true;}
+	    if (!sameAsBilling)
+	        remove_overlay("shipping_info");
+	    validShippingAddress = 1;
+	    check_address(type);
+	}
+
+	function check_address2_pos(type)
+	{
+	    if (jQuery("#hdnAddrressValidatorResult").val() == "1")
+	    {
+	        jQuery.modal.close();
+	        validShippingAddress = 1;
+	        check_address(type);
+	    }
+	    else
+	    {
+	        validShippingAddress = 0;
+	        jQuery("#divAddrressValidator").modal({containerCss:{borderWidth:"1px"}});
+	    }
+	}
+
+	function closeAddressValidatorModal()
+	{
+	    parent.jQuery.modal.close();
+	    if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null){
+	        var sameAsBilling = get_Element('sameAsBilling').checked;}
+	    else{
+	        var sameAsBilling = true;}
+	    if (!sameAsBilling)
+	        remove_overlay("shipping_info");
+	}
+
+	function select_shipping(shipid)
+	{
+	    selectedShipId = shipid;
+	    add_overlay("total_div",1);
+	    add_overlay("divPayment", 1);
+
+	    var url = 'ship_ajax.asp?action1=total&no-cache='+Math.random();
+	    var params = 'id=' + shipid + '&action=total';
+
+	    jQuery.ajax({
+	        url: url,
+	        dataType: 'html',
+	        type: 'POST',
+	        data: params,
+	        cache: false,
+	        success: function (strResult) {
+	            jQuery("#total_div").html(strResult);
+	        },
+	        complete: updateajax_total,
+	        error: reportError
+	    });
+	}
+
+	    function applyCoupon(strCoupon)
+	    {
+	        var strMsg = "";
+
+	        if (jQuery.trim(strCoupon) == "")
+	            strMsg += " - Coupon cannot be blank.\n"
+
+	        if (strMsg != ""){
+	            alert(strMsg);
+	            return false;
+	        }
+
+	        add_overlay("total_div",1);
+	        var url = 'ship_ajax.asp?action1=total&no-cache='+Math.random();
+	        var params = 'id=' + selectedShipId + '&action=total&coupon='+escape(strCoupon);
+
+	        jQuery.ajax({
+	            url: url,
+	            dataType: 'html',
+	            type: 'POST',
+	            data: params,
+	            cache: false,
+	            success: function (strResult) {
+	                jQuery("#total_div").html(strResult);
+	            },
+	            complete: updateajax_total,
+	            error: reportError
+	        });
+	    }
+
+	    function doPayment()
+	    {
+	        var params = '';
+
+	        add_overlay("divPayment", 1);
+	        var url = 'checkout_one.asp?action=dopayment';
+
+	        jQuery.ajax({
+	            url: url,
+	            dataType: 'html',
+	            type: 'POST',
+	            data: params,
+	            cache: false,
+	            success: function (strResult) {
+	                jQuery("#divPayment").html(strResult);
+	            },
+	            complete: paymentSuccess,
+	            error: reportError
+	        });
+	    }
+
+	    function paymentSuccess()
+	    {
+	        controlDivPayment('');
+	        remove_overlay("divPayment");
+	    }
+
+	    function checkoutQuestionsSuccess() {
+	        remove_overlay("divCheckoutQuestions");
+	    }
+
+	    function doCart()
+	    {
+	        var params = 'action=docart';
+
+	        add_overlay("divCart",1);
+	        var url = 'checkout_one.asp';
+
+	        jQuery.ajax({
+	            url: url,
+	            dataType: 'html',
+	            type: 'POST',
+	            data: params,
+	            cache: false,
+	            success: function (strResult) {
+	                jQuery("#divCart").html(strResult);
+	            },
+	            complete: cartSuccess,
+	            error: reportError
+	        });
+	    }
+
+	    function cartSuccess()
+	    {
+	        remove_overlay("divCart");
+	    }
+
+
+	    function updateajax(request)
+	    {
+	        ajax_request_progress=0;
+	        remove_overlay("billing_info");
+
+	        if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+	            if (!document.billing.sameAsBilling.checked)
+	                remove_overlay("shipping_info");
+
+	        remove_overlay("shipping_div");
+	        remove_overlay("total_div");
+	        remove_overlay("divPayment");
+
+	        if (request != 'CouponApplied')
+	        {
+	            if (get_Element('radio_ship')!=undefined)
+	            {
+	                var selectedId = jQuery('input[name=shipping]:checked', '#billing').val();
+	                if (!jQuery.isNumeric(selectedId))
+	                    selectedId = -1;
+	                select_shipping(selectedId);
+	            }
+	            else
+	            {
+	                select_shipping(-1);
+	            }
+	        }
+	    }
+
+	    function reportError(jqXHR, textStatus) {
+	        isSubmitComplete = false;
+	        ajax_request_progress=0;
+	        remove_overlay("billing_info");
+
+	        if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+	            if (!document.billing.sameAsBilling.checked)
+	                remove_overlay("shipping_info");
+	        if (jqXHR.status > 0)
+	        {
+	            alert("Error processing request " + jqXHR.status + " - " + jqXHR);
+	            //alert(jqXHR.responseText);
+	        }
+	    }
+
+	    function showHideShipping() {
+
+	        if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+	        {
+	            if (document.billing.sameAsBilling.checked)
+	            {
+	                add_overlay("shipping_info",0);
+
+	                get_Element('shipping_firstname').value = '';
+	                get_Element('shipping_lastname').value = '';
+	                get_Element('shipping_company').value = '';
+	                get_Element('shipping_phone').value = '';
+	                get_Element('shipping_address').value = '';
+	                get_Element('shipping_address2').value = '';
+	                get_Element('shipping_city').value = '';
+	                get_Element('shipping_zip').value = '';
+	                get_Element('shipping_country').value	= get_Element('billing_country').value;
+	                populateState('shipping_state','shipping_country');
+	                get_Element('shipping_state').value		= get_Element('billing_state').value;
+	            }
+	            else
+	            {
+	                remove_overlay("shipping_info");
+
+	                if (get_Element('shipping_firstname').value != "[shipping_firstname]")
+	                {
+	                    get_Element('shipping_firstname').value = get_Element('billing_firstname').value;
+	                    get_Element('shipping_lastname').value	= get_Element('billing_lastname').value;
+	                    get_Element('shipping_company').value	= get_Element('billing_company').value;
+	                    get_Element('shipping_phone').value		= get_Element('billing_phone').value;
+	                    get_Element('shipping_address').value	= get_Element('billing_address').value;
+	                    get_Element('shipping_address2').value	= get_Element('billing_address2').value;
+	                    get_Element('shipping_city').value		= get_Element('billing_city').value;
+	                    get_Element('shipping_zip').value		= get_Element('billing_zip').value;
+	                    get_Element('shipping_country').value	= get_Element('billing_country').value;
+	                    populateState('shipping_state','shipping_country');
+	                    get_Element('shipping_state').value		= get_Element('billing_state').value;
+	                }
+	            }
+	        }
+	        else
+	        {
+	            //add_overlay("shipping_info",0);
+	        }
+	    }
+
+	    function selectGiftRegAddress() {
+	        remove_overlay("shipping_info");
+
+	        if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+	        {
+	            get_Element('sameAsBilling').checked = false;
+	        }
+	        get_Element('shipping_firstname').value = get_Element('giftreg_shipping_firstname').value;
+	        get_Element('shipping_lastname').value	= get_Element('giftreg_shipping_lastname').value;
+	        get_Element('shipping_company').value	= get_Element('giftreg_shipping_company').value;
+	        get_Element('shipping_phone').value		= get_Element('giftreg_shipping_phone').value;
+	        get_Element('shipping_address').value	= get_Element('giftreg_shipping_address').value;
+	        get_Element('shipping_address2').value	= get_Element('giftreg_shipping_address2').value;
+	        get_Element('shipping_city').value		= get_Element('giftreg_shipping_city').value;
+	        get_Element('shipping_zip').value		= get_Element('giftreg_shipping_zip').value;
+	        get_Element('shipping_country').value	= get_Element('giftreg_shipping_country').value;
+	        populateState('shipping_state','shipping_country');
+	        get_Element('shipping_state').value		= get_Element('giftreg_shipping_state').value;
+	        check_address('');
+	    }
+
+	    function getElementById_s(id){
+	        var obj = null;
+	        if(document.getElementById){
+	            /* Prefer the widely supported W3C DOM method, if
+                available:-
+                */
+	            obj = get_Element(id);
+	        }else if(document.all){
+	            /* Branch to use document.all on document.all only
+                browsers. Requires that IDs are unique to the page
+                and do not coincide with NAME attributes on other
+                elements:-
+                */
+	            obj = document.all[id];
+	        }
+	        /* If no appropriate element retrieval mechanism exists on
+            this browser this function always returns null:-
+            */
+	        return obj;
+	    }
+
+	    function remove_overlay(panel)
+	    {
+	        var objBody = getElementById_s('overlay_'+panel);
+	        if (objBody != null && objBody != 'null' && objBody != undefined && objBody != 'undefined')
+	            objBody.style.display = 'none';
+	    }
+
+	    function add_overlay(panel,loading)
+	    {
+	        var objBody = getElementById_s(panel);
+	        var objOverlay = document.createElement("div");
+
+	        objOverlay.setAttribute('id','overlay_'+panel);
+	        objOverlay.className='overlay';
+	        objOverlay.style.position = 'absolute';
+	        objOverlay.style.textAlign = 'center';
+	        objOverlay.style.width = objBody.clientWidth+"px";
+	        objOverlay.style.height = objBody.clientHeight+"px";
+	        //alert(objOverlay.style.height);
+	        objBody.insertBefore(objOverlay, objBody.firstChild);
+	        objOverlay.style.display = 'block';
+
+	        if (loading==1)
+	        {
+	            get_Element('overlay_'+panel).innerHTML = '<table border=0 width=100% height=100%><tr><td style="text-align: center;"><img src="assets/templates/common/images/loading.gif"></td></tr></table>';
+	        }
+	        else
+	        {
+	            get_Element('overlay_'+panel).innerHTML = '<table border=0 width=100% height=100%><tr><td align="center"></td></tr></table>';
+	        }
+	        DisableEnableForm(document.billing,false);
+	    }
+
+	    function DisableEnableForm(xForm,xHow)
+	    {
+	        objElems = xForm.elements;
+	        for(i=0;i<objElems.length;i++)
+	        {
+	            objElems[i].disabled = xHow;
+	        }
+	    }
+
+	    var giftCertDetails = "";
+	    function showGiftCertDetails()
+	    {
+	        get_Element('divGiftCertDetails').style.display = giftCertDetails;
+	        if (giftCertDetails == "")
+	            giftCertDetails = "none";
+	        else
+	            giftCertDetails = "";
+	    }
+
+	    var giftDiscountDetails = "";
+	    function showDiscountDetails()
+	    {
+	        get_Element('divDiscountDetails').style.display = giftDiscountDetails;
+	        if (giftDiscountDetails == "")
+	            giftDiscountDetails = "none";
+	        else
+	            giftDiscountDetails = "";
+	    }
+
+	    function fillEmailDiv()
+	    {
+	        var strValue = get_Element('billing_email').value;
+	        if (strValue == '')
+	            strValue = 'Type your email above';
+	        if (get_Element('divEmail') != 'undefined' && get_Element('divEmail') != null)
+	        {
+	            strValue = "&nbsp;" + jQuery.trim(removeHTMLTags(strValue));
+	            get_Element('divEmail').innerHTML = strValue;
+	        }
+	    }
+
+	    function updateOrderEmail()
+	    {
+	        var strValue = get_Element('billing_email').value;
+	        //alert(strValue);
+	        var url = 'ship_ajax.asp?action=updateOrderEmail&no-cache='+Math.random();
+	        var params = 'email=' + escape(strValue);
+
+	        jQuery.ajax({
+	            url: url,
+	            dataType: 'html',
+	            type: 'POST',
+	            data: params,
+	            cache: false
+	        });
+	    }
+
+	    function removeHTMLTags(strString)
+	    {
+	        var strInputCode = strString;
+
+	        strInputCode = strInputCode.replace(/&(lt|gt);/g, function (strMatch, p1){
+	            return (p1 == "lt")? "<" : ">";
+	        });
+	        var strTagStrippedText = strInputCode.replace(/<\/?[^>]+(>|$)/g, "");
+	        strTagStrippedText = strTagStrippedText.replace(/\u00a0/g,'');
+	        //strTagStrippedText = strTagStrippedText.replace(/&nbsp;/gi,'');
+	        return strTagStrippedText;
+	    }
+
+	    function clearContent(obj)
+	    {
+	        obj.value = removeHTMLTags(obj.value);
+	    }
+
+	    function controlDivPayment(id)
+	    {
+	        var divs = document.getElementsByTagName("div");
+	        for (var x = 0; x < divs.length; x++)
+	        {
+	            if ((divs[x].id.indexOf("divPaymentOption") >= 0))
+	            {
+	                obj1=get_Element(divs[x].id);
+
+	                if (obj1!=undefined)
+	                    if (id == '')
+	                    {
+	                        obj1.style.display = '';
+	                        break;
+	                    }
+	                    else
+	                    {
+	                        if (obj1.id == 'divPaymentOption'+id)
+	                            obj1.style.display = '';
+	                        else
+	                            obj1.style.display = 'none';
+	                    }
+	            }
+	        }
+	    }
+
+	    function controlDivShipping(id)
+	    {
+	        var divs = document.getElementsByTagName("div");
+	        for (var x = 0; x < divs.length; x++)
+	        {
+	            if (divs[x].id.indexOf("divShipping") >= 0 && divs[x].id != "divShipping" && divs[x].id != "divShippingCUSTOM")
+	            {
+	                obj1=get_Element(divs[x].id);
+
+	                if (obj1!=undefined)
+	                    if (id == '')
+	                    {
+	                        obj1.style.display = '';
+	                        break;
+	                    }
+	                    else
+	                    {
+	                        if (obj1.id == 'divShipping'+id)
+	                            obj1.style.display = '';
+	                        else
+	                            obj1.style.display = 'none';
+	                    }
+	            }
+	        }
+	    }
+
+	    //utilities.js
+	    addLoadEvent(initpage);
+
+</script>
+<center>
+  <form action="checkout_one.asp" method="post" name="billing" id="billing">
+    <div id="billing_div" style="width:100%;">
+      <table width="98%" cellpadding="0" cellspacing="6" border="0">
+        <tr>
+          <td colspan="2"><div id="divCart" style="width:100%;">
+              <!--START: SHOPPING_CART_TEMP-->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td class="page_headers" align="left" colspan="5">One Page Checkout</td>
+                </tr>
+                <tr>
+                  <td height="10" colspan="5"><img src="assets/templates/common/images/spacer.gif" alt="" width="1" height="10" /></td>
+                </tr>
+                <!--START: CATEGORY_HEADER-->
+                <tr>
+                  <td height="10" colspan="5"><table width="100%" cellspacing="0" cellpadding="2" border="0">
+                      <tr>
+                        <td class="data">[CONTENT]</td>
+                      </tr>
+                    </table></td>
+                </tr>
+                <tr>
+                  <td height="10" colspan="5"><img src="assets/templates/common/images/spacer.gif" alt="" width="1" height="10" /></td>
+                </tr>
+                <!--END: CATEGORY_HEADER-->
+                <tr>
+                  <td class="titles2" align="left" colspan="2" width="10%"><strong>[shoppingcart_items]</strong></td>
+                  <td class="titles2" align="center"><strong>[shoppingcart_quantity]</strong></td>
+                  <td class="titles2" align="right"><strong>[shoppingcart_price]</strong></td>
+                  <td class="titles2" align="right"><strong>[shoppingcart_total]</strong></td>
+                </tr>
+                <tr>
+                  <td height="1" colspan="5" class="borders"><img src="assets/templates/common/images/spacer.gif" height="1"></td>
+                </tr>
+                <!--START: SHOPPING_CART_ITEM-->
+                <tr>
+                  <td width="15%" height="60" valign="middle"><a href="product.asp?itemid=[ITEM_CATALOGID]"><img src="thumbnail.asp?file=[THUMBNAIL]" border="0" height="55" width="55" /></a></td>
+                  <td class="item" valign="middle" align="left" width="55%"><a href="product.asp?itemid=[ITEM_CATALOGID]">[ITEM_NAME]</a>
+                    <!--START: itemoptions-->
+                    <br />
+                    <a href='#' onClick="toggleProdOptions('opt[ITEM_ID]')">View/Hide options</a><br />
+                    <div id=opt[ITEM_ID] name=opt[ITEM_ID] style="display:none;">[OPTIONS]</div>
+                    <!--END: itemoptions-->
+                    <!--START: recurring_frequency-->
+                    <br />
+                    This item will Autoship every <b>[recurring_frequency]</b>
+                    <!--END: recurring_frequency--></td>
+                  <td valign="middle" class="item" align="center">[ITEM_QUANTITY]
+                    <input type="hidden" name="coliditemnum" value="[ITEM_ID]" size="3" maxlength="5" id="Hidden3" /></td>
+                  <td valign="middle" class="item" align="right">[ITEM_PRICE]</td>
+                  <td valign="middle" class="item" align="right">[ITEM_SUBTOTAL]</td>
+                </tr>
+                <tr>
+                  <td height="1" colspan="6" class="borders"><img src="assets/templates/common/images/spacer.gif" height="1"></td>
+                </tr>
+                <!--END: SHOPPING_CART_ITEM-->
+              </table>
+
+              <!--END: SHOPPING_CART_TEMP-->
+            </div></td>
+        </tr>
+        <!--START: account_login1-->
+        <tr>
+          <td colspan="2"><table width="100%" cellpadding="0" cellspacing="4" class="alternative">
+              <tr>
+                <td class="item"> [checkout1_loginmessage2] <br />
+                  <br />
+                  <div style="float: left;">
+                    <input type="button" value="[checkout1_login]" name="B3" onclick="document.location='checkout.asp?step=log-in';" class="btn" onmouseover="this.className='btn_over'" onmouseout="this.className='btn'" />
+                  </div>
+                  <!--START: fbconnect-->
+                  <div style="float: left; margin: 2px 8px; padding: 0px;"><a onclick="popup('social_login.asp?p=fl&return=checkout',1000,550)" href="#" title="Sign in with Facebook"><img src="assets/templates/common/images/facebook_signin.png" alt="Sign in with Facebook" width="150" height="22" border="0" /></a></div>
+                  <!--END: fbconnect--></td>
+              </tr>
+            </table></td>
+        </tr>
+        <!--END: account_login1-->
+        <tr>
+          <td colspan="2">&nbsp;</td>
+        </tr>
+        <tr>
+          <!-- start left bar-->
+          <td valign="top" width="50%"><table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td colspan="2" class="checkout-headers"> [account_billing-info] </td>
+              </tr>
+              <tr>
+                <td><div id="billing_info" style="width:100%">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                            <div id="billing_info2" style="width:100%">
+                            <table width="100%" cellpadding="0" cellspacing="4" class="alternative">
+                            <!--START: SAVE_ADDRESSES-->
+                            <tr>
+                              <td width="31%" align="right" class="item"><strong>[checkout3_PreviousAddresses]</strong></td>
+                              <td><select type="dropdown" name="save_address" onChange="javascript:filladdress_form(this,'billing','billing');check_address('billing');" class="txtBoxStyle">
+                              [address_billing_list]
+                              </select></td>
+                            </tr>
+                            <!--END: SAVE_ADDRESSES-->
+                            <tr>
+                              <td width="31%" align="right" class="item"><b>[CustomerInfo_firstname]</b></td>
+                              <td nowrap><input name="billing_firstname" onChange="clearContent(this);" type="text" id="billing_firstname" value="[billing_firstname]" size="15" class="txtBoxStyle">
+                                <!--START: req_billing_firstname-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_firstname--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_lastname]</b></td>
+                              <td nowrap><input name="billing_lastname" type="text" onChange="clearContent(this);" id="billing_lastname" value="[billing_lastname]" size="15" class="txtBoxStyle">
+                                <!--START: req_billing_lastname-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_lastname--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_company]</b></td>
+                              <td><input name="billing_company" type="text" onChange="clearContent(this);" id="billing_company" value="[billing_company]" size="25" class="txtBoxStyle"></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_phone]</b></td>
+                              <td nowrap><input name="billing_phone" type="text" onChange="clearContent(this);" id="billing_phone" value="[billing_phone]" size="25" class="txtBoxStyle">
+                                <!--START: req_billing_phone-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_phone--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_address]</b></td>
+                              <td nowrap><input name="billing_address" type="text" onChange="clearContent(this);[po_box_disabled_billing]" id="billing_address" value="[billing_address]" size="25" class="txtBoxStyle">
+                                <!--START: req_billing_address-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_address--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_address2]</b></td>
+                              <td><input name="billing_address2" type="text" onChange="clearContent(this);" id="billing_address2" value="[billing_address2]" size="25" class="txtBoxStyle"></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_city]</b></td>
+                              <td nowrap><input name="billing_city" type="text" onChange="clearContent(this);" id="billing_city" value="[billing_city]" size="25" class="txtBoxStyle">
+
+                                <!--START: req_billing_city-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_city--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_country]</b></td>
+                              <td nowrap><select name="billing_country" onChange="this.form.billing_zip.value='';populateState('billing_state','billing_country');check_stateValidator('billing');check_address('billing');" class="txtBoxStyle" id="billing_country">
+                                </select>
+                                <!--START: req_billing_country-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_country--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_state]</b></td>
+                              <td nowrap><span>
+                                <select id="billing_state" onChange="this.form.billing_zip.value='';check_address('billing');" name="billing_state" class="txtBoxStyle">
+                                </select>
+                                </span>
+                                <!--START: req_billing_state-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_state--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_zip]</b></td>
+                              <td nowrap><input name="billing_zip" maxlength="15" type="text" id="billing_zip" value="[billing_zip]" size="10" class="txtBoxStyle" onChange="clearContent(this);check_address('billing');" >
+
+                                <!--START: req_billing_zip-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_billing_zip--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_email]</b></td>
+                              <td nowrap><input name="billing_email" type="text" id="billing_email" maxlength="50" onBlur="fillEmailDiv();" onKeyUp="fillEmailDiv();" onChange="clearContent(this);fillEmailDiv();updateOrderEmail();" value="[email]" size="25" class="txtBoxStyle">
+
+                                <!--START: emailrequired-->
+                                <!--START: req_email-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_email-->
+                                <!--END: emailrequired--></td>
+                            </tr>
+                            <!--START: confirm_email-->
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_confirmemail]</b></td>
+                              <td nowrap><input name="billing_confirmemail" type="text" id="billing_confirmemail" maxlength="50" value="" size="25" class="txtBoxStyle">
+
+                                <!--START: emailrequired-->
+                                <!--START: req_email-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_email-->
+                                <!--END: emailrequired--></td>
+                            </tr>
+                            <!--END: confirm_email-->
+                            <tr>
+                              <td align="right" class="item"><input type="checkbox" value="1" name="maillist" [maillist] id="Checkbox1"></td>
+                              <td class="item">[checkout1_joinmailinglist]</td>
+                            </tr>
+                          </table>
+                          <br />
+                          </div></td>
+                      </tr>
+                      <!--START: account_login2-->
+                      <tr>
+                        <td colspan="2" class="checkout-headers"> [checkout1_Header-createnewaccount] </td>
+                      </tr>
+                      <tr>
+                        <td><table width="100%" cellpadding="0" cellspacing="4" class="alternative">
+                            <tr>
+                              <td width="20%" align="right" class="item"><strong>[CustomerInfo_email]:</strong></td>
+                              <td class="item"><div id="divEmail">&nbsp;[email]</div></td>
+                            </tr>
+                            <tr class="item">
+                              <td align="right" class="item"><strong>[CustomerInfo_password]: </strong></td>
+                              <td nowrap><input type="password" size="12" name="pass" class="txtBoxStyle" id="pass" autocomplete="off">
+
+                                <!--START: passwordrequired-->
+                                <!--START: req_pass-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_pass-->
+                                <!--END: passwordrequired--></td>
+                            </tr>
+                          </table>
+                          <br /></td>
+                      </tr>
+                      <!--END: account_login2-->
+                    </table>
+                  </div></td>
+              </tr>
+            </table></td>
+          <!-- end left bar-->
+          <!-- start right bar-->
+          <td valign="top" align="right"><!--START: GIFT_REGISTRY_SHIPPING-->
+            <input type="hidden" name="giftreg_shipping_firstname" id="giftreg_shipping_firstname" value="[giftreg_shipping_firstname]">
+            <input type="hidden" name="giftreg_shipping_lastname" id="giftreg_shipping_lastname" value="[giftreg_shipping_lastname]">
+            <input type="hidden" name="giftreg_shipping_company" id="giftreg_shipping_company" value="[giftreg_shipping_company]">
+            <input type="hidden" name="giftreg_shipping_phone" id="giftreg_shipping_phone" value="[giftreg_shipping_phone]">
+            <input type="hidden" name="giftreg_shipping_address" id="giftreg_shipping_address" value="[giftreg_shipping_address]">
+            <input type="hidden" name="giftreg_shipping_address2" id="giftreg_shipping_address2" value="[giftreg_shipping_address2]">
+            <input type="hidden" name="giftreg_shipping_city" id="giftreg_shipping_city" value="[giftreg_shipping_city]">
+            <input type="hidden" name="giftreg_shipping_zip" id="giftreg_shipping_zip" value="[giftreg_shipping_zip]">
+            <input type="hidden" name="giftreg_shipping_country" id="giftreg_shipping_country" value="[giftreg_shipping_country]">
+            <input type="hidden" name="giftreg_shipping_state" id="giftreg_shipping_state" value="[giftreg_shipping_state]">
+            <table width="97%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="checkout-headers" colspan="2">[checkout1_Header-giftreg]</td>
+              </tr>
+              <tr>
+                <td colspan="2" align="left"><table width="100%" cellpadding="3" cellspacing="0" class="alternative">
+                    <tr>
+                      <td colspan="2" class="item">[checkout1_Header-giftreg-instructions]</td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" class="item"><input type="button" id="cmdRegShip" onclick="javascript:selectGiftRegAddress();" name="cmdRegShip" value="Select Registry Address" class="btn"></td>
+                    </tr>
+                  </table>
+                  <br /></td>
+              </tr>
+            </table>
+
+            <!--END: GIFT_REGISTRY_SHIPPING-->
+
+            <table width="97%" cellpadding="0" cellspacing="0">
+              <tr class="checkout-headers">
+                <td class="checkout-headers">[checkout1_Header-shippinginformation]</td>
+                <!--START: sameAsBilling1-->
+                <td class="checkout-headers" valign="middle" width="130"><input type="checkbox" value="ON" name="sameAsBilling" id="sameAsBilling" onClick="showHideShipping();check_address('');">
+                  <span class="item">[checkout3_sameasbilling]</span></td>
+                <!--END: sameAsBilling1-->
+              </tr>
+              <tr>
+                <td colspan="3" align="right"><div id="shipping_info" style="width:100%;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td><!--START: sameAsBilling2-->
+
+                          <table width="100%" cellpadding="0" cellspacing="4" class="alternative">
+                            <!--START: SAVE_ADDRESSES2-->
+                            <tr>
+                              <td width="30%" align="right" class="item"><strong>[checkout3_PreviousAddresses]</strong></td>
+                              <td><select type="dropdown" name="save_address" onChange="javascript:filladdress_form(this,'billing','shipping');check_address('shipping');" id="Select2" class="txtBoxStyle">
+                              [address_list]
+                              </select></td>
+                            </tr>
+                            <!--END: SAVE_ADDRESSES2-->
+                            <tr>
+                              <td width="30%" align="right" class="item"><b>[CustomerInfo_firstname]</b></td>
+                              <td><input name="shipping_firstname" onChange="clearContent(this);" type="text" id="shipping_firstname" value="[shipping_firstname]" size="15" class="txtBoxStyle">
+                                <!--START: req_shipping_firstname-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_firstname--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_lastname]</b></td>
+                              <td><input name="shipping_lastname" onChange="clearContent(this);" type="text" id="shipping_lastname" value="[shipping_lastname]" size="15" class="txtBoxStyle">
+                                <!--START: req_shipping_lastname-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_lastname--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_company]</b></td>
+                              <td><input name="shipping_company" onChange="clearContent(this);" type="text" id="shipping_company" value="[shipping_company]" size="25" class="txtBoxStyle"></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_phone]</b></td>
+                              <td nowrap><input name="shipping_phone" onChange="clearContent(this);" type="text" id="shipping_phone" value="[shipping_phone]" size="25" class="txtBoxStyle">
+                                <!--START: req_shipping_phone-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_phone--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_address]</b></td>
+                              <td nowrap><input name="shipping_address" onChange="clearContent(this);[po_box_disabled_shipping]" type="text" id="shipping_address" value="[shipping_address]" size="25" class="txtBoxStyle">
+                                <!--START: req_shipping_address-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_address--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_address2]</b></td>
+                              <td nowrap><input name="shipping_address2" onChange="clearContent(this);" type="text" id="shipping_address2" value="[shipping_address2]" size="25" class="txtBoxStyle"></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_city]</b></td>
+                              <td nowrap><input name="shipping_city" onChange="clearContent(this);" type="text" id="shipping_city" value="[shipping_city]" size="25" class="txtBoxStyle">
+                                <!--START: req_shipping_city-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_city--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_country]</b></td>
+                              <td nowrap><select name="shipping_country" onChange="this.form.shipping_zip.value='';populateState('shipping_state','shipping_country');check_stateValidator('shipping');check_address('shipping');" class="txtBoxStyle" id="shipping_country">
+                                </select>
+                                <!--START: req_shipping_country-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_country--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_state]</b></td>
+                              <td nowrap><select id="shipping_state" onChange="this.form.shipping_zip.value='';check_address('shipping');" name="shipping_state" class="txtBoxStyle">
+                                </select>
+                                <!--START: req_shipping_state-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_state--></td>
+                            </tr>
+                            <tr>
+                              <td align="right" class="item"><b>[CustomerInfo_zip]</b></td>
+                              <td nowrap><input name="shipping_zip" maxlength="15" type="text" id="shipping_zip" value="[shipping_zip]" size="10" class="txtBoxStyle" onChange="clearContent(this);check_address('shipping');" >
+                                <!--START: req_shipping_zip-->
+                                <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+                                <!--END: req_shipping_zip--></td>
+                            </tr>
+                          </table>
+                          <!--END: sameAsBilling2-->
+                          <!--START: sameAsBilling3-->
+                          <table width="100%" cellpadding="3" cellspacing="0" id="Table29">
+                            <tr>
+                              <td align="center" class="item"><br />
+                                [checkout3_sameasbillingmessage]</strong></td>
+                            </tr>
+                          </table>
+                          <!--END: sameAsBilling3-->
+                          <br /></td>
+                      </tr>
+                    </table>
+                  </div></td>
+              </tr>
+            </table></td>
+          <!-- end right bar-->
+        </tr>
+        <tr>
+          <!-- start left bar2-->
+          <td valign="top" width="50%"><table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="checkout-headers">[checkout3_Header-shippingmethodinfo]</td>
+              </tr>
+              <tr>
+                <td><div id="shipping_div" style="width:100%;font-size:10pt;">
+                    <table width="100%" cellpadding="0" cellspacing="4" class="alternative">
+                      <tr>
+                        <td class="item"><div id="shipResult">
+                            <p class="item">[checkout3_shippinginstructions]</P>
+                          </div>
+                          <a href="javascript:check_address('refresh');">[checkout3_refreshRates]</a></td>
+                      </tr>
+                    </table>
+                  </div>
+                  <br /></td>
+              </tr>
+            </table></td>
+          <!-- end left bar2-->
+          <!-- start right bar2-->
+          <td valign="top" align="right"><table width="95%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td class="checkout-headers" colspan="3" valign="top">[checkout3_orderTotal]</td>
+              </tr>
+              <tr>
+                <td colspan="3"><div id="total_div" name="total_div" style="width:100%;">
+                    <!--START: total_template_noshipping-->
+                    <table width="100%" cellpadding="0" cellspacing="2" id="Table30" border="0" class="alternative">
+                      <tr>
+                        <td height="15" style="font-size:10pt;"><p>[checkout3_totalinstructions]</p></td>
+                      </tr>
+                    </table>
+                    <!--END: total_template_noshipping-->
+                    <!--START: total_template-->
+                    <table width="100%" cellpadding="0" cellspacing="2" id="Table20" border="0" class="alternative">
+                      <tr>
+                        <td class="item"><strong>[itemCount] Item(s)</strong>:</td>
+                        <td class="item" style="text-align:right;">[SUBTOTAL]</td>
+                      </tr>
+                      <!--START: DISCOUNTS-->
+                      <tr>
+                        <td class="item"><strong>[shoppingcart_discount]</strong>: <a href="javascript:showDiscountDetails();">(details)</a></td>
+                        <td class="item" style="text-align:right;">- [DISCOUNT]</td>
+                      </tr>
+                      <!--START: PROMOTIONS-->
+                      <tr>
+                        <td colspan="2" align="center"><div id="divDiscountDetails" name="divDiscountDetails" style="width:100%;align:center;display:none;background:#efefef;">
+                            <table width="100%" cellpadding="0" cellspacing="2" id="Table28" border="0">
+                              <tr>
+                                <td class="item"><b>Promotion Name</td>
+                                <td class="item"></td>
+                              </tr>
+                              <!--START: DISPLAY_PROMOS-->
+                              <tr>
+                                <td class="item">[promotion_name]</td>
+                                <td class="item" style="text-align:right;"><a href="javascript:removeCoupon('[id]');">remove</a></td>
+                              </tr>
+                              <!--END: DISPLAY_PROMOS-->
+                            </table>
+                          </div></td>
+                      </tr>
+                      <!--END: PROMOTIONS-->
+                      <!--END: DISCOUNTS-->
+                      <!--START: BUYSAFE-->
+                      <tr>
+                        <td class="item" ><img src="assets/templates/common/images/buysafe.gif" border="0"></td>
+                        <td class="item" style="text-align:right;">[buysafe_totalbondcost]</td>
+                      </tr>
+                      <!--END: BUYSAFE-->
+                      <!--START: HANDLING-->
+                      <tr>
+                        <td class="item" ><strong>[handling_itemname]</strong>:</td>
+                        <td class="item" style="text-align:right;">[handling_price]</td>
+                      </tr>
+                      <!--END: HANDLING-->
+                      <tr>
+                        <td class="item" ><strong>[shoppingcart_shipping]</strong>:</td>
+                        <td class="item" style="text-align:right;">[SHIPPING]</td>
+                      </tr>
+                      <tr>
+                        <td class="item"><strong>[shoppingcart_taxes]</strong>:</td>
+                        <td class="item" style="text-align:right;">[TAX]</td>
+                      </tr>
+                      <tr>
+                        <td class="item"><strong>[shoppingcart_total]</strong>:</td>
+                        <td class="item" style="text-align:right;">[TOTAL]</td>
+                      </tr>
+                      <!--START: GIFTCERTS-->
+                      <tr>
+                        <td class="item" nowrap><strong>[shoppingcart_giftcertificate]</strong>: <a href="javascript:showGiftCertDetails();">(details)</a></td>
+                        <td class="item" style="text-align:right;">-[GIFTCERTS]</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" align="center"><div id="divGiftCertDetails" name="divGiftCertDetails" style="width:100%;align:center;display:none;background:#efefef;">
+                            <table width="100%" cellpadding="0" cellspacing="2" id="Table26" border="0">
+                              <tr>
+                                <td class="item"><b>Gift Code</td>
+                                <td class="item" style="text-align:right;"><b>Amount</td>
+                                <td class="item" style="text-align:right;"><b>Balance</td>
+                                <td class="item"></td>
+                              </tr>
+                              <!--START: GIFTCERTS_DETAILS_ITEMS-->
+                              <tr>
+                                <td class="item">[certificate_name]</td>
+                                <td class="item" style="text-align:right;">[discount_amount]</td>
+                                <td class="item" style="text-align:right;">[discount_balance]</td>
+                                <td class="item" style="text-align:right;"><a href="javascript:removeCoupon('[id]');">remove</a></td>
+                              </tr>
+                              <!--END: GIFTCERTS_DETAILS_ITEMS-->
+                            </table>
+                          </div></td>
+                      </tr>
+                      <!--END: GIFTCERTS-->
+                      <tr>
+                        <td class="item" colspan="2"><hr></td>
+                      </tr>
+                      <tr>
+                        <td class="item"><strong>[shoppingcart_balance]</strong>:</td>
+                        <td class="item" style="text-align:right;"><span class="price">[BALANCE]</span></td>
+                      </tr>
+                      <tr>
+                        <td class="item" colspan="2"><hr></td>
+                      </tr>
+                      <!--START: apply_coupon-->
+                      <tr>
+                        <td class="item" colspan="2"><table width="100%" border="0">
+                            <tr>
+                              <td class="item"><strong>[viewcart_coupon-header]:</strong></td>
+                              <td nowrap><input id="coupon" onChange="clearContent(this);" maxlength="30" size="15" value="" name="coupon_code" />
+                                <input type=button class="btn" onClick="applyCoupon(this.form.coupon_code.value);" value="Go!" /></td>
+                            </tr>
+                            <tr>
+                              <td class="item" colspan="10">[viewcart_coupon-message]</td>
+                            </tr>
+                            <tr>
+                              <td class="item" colspan="10"><div name="divInvalidCoupon" id="divInvalidCoupon" style="display:[invalidCouponDisplay];color:#f00;">[viewcart_coupon-invalid]</div>
+                                [divCouponApplied] </td>
+                            </tr>
+                          </table></td>
+                      </tr>
+                      <!--END: apply_coupon-->
+                    </table>
+                    <!--END: total_template-->
+                  </div></td>
+              </tr>
+            </table></td>
+          <!-- end right bar2-->
+        </tr>
+        <tr>
+          <td colspan="2"><div id="divPayment" style="width:100%">
+              <!--START: PAYMENT_BLOCK-->
+              <table border="0" width="100%" id="Table13">
+                <tr>
+                  <td class="checkout-headers">[checkout3_methodofpaymentselect]</td>
+                </tr>
+                <!--START: NO_PAYMENT_BLOCK-->
+                <tr>
+                  <td class="item">There's no payment options available to your address. Please check the entered address and try again.</td>
+                </tr>
+                <!--END: NO_PAYMENT_BLOCK-->
+                <tr>
+                  <td><div style="width:100%">
+                      <table width="100%" cellpadding="0" cellspacing="3" class="alternative" id="Table14">
+                        <!--START: CHECKGATEWAY-->
+                        <tr>
+                          <td class="titles"><input  onclick="javascript:checkoutSwitch(false);controlDivPayment('[id]');" name="payment" type="radio" value="online-[id]" [FIRSTOPTIONCHECKED] id="Radio7">
+                            &nbsp;[payment_description] </td>
+                        </tr>
+                        <tr>
+                          <td class="item"><div id="divPaymentOption[id]" name="divPaymentOption" style="display:none;">
+                              <table width="100%" cellpadding="0" cellspacing="3" id="Table5">
+                                <tr>
+                                  <td class="item" colspan="2">[payment_description_message]</td>
+                                </tr>
+                                <tr>
+                                  <td class="item" align="right"><b>[CustomerInfo_check-type]</b></td>
+                                  <td><select name="ff[id]_ochecktype" class="txtBoxStyle" id="Select9">
+
+
+														[checktypelist]
+
+
+                                    </select>
+                                    <img src="assets/templates/common/images/error2.gif" width="12" height="12"></td>
+                                </tr>
+                                <tr>
+                                  <td class="item" align="right"><b>[CustomerInfo_check-acct-type]</b></td>
+                                  <td><select name="ff[id]_ocheckaccttype" class="txtBoxStyle" id="Select10">
+
+
+														[checkaccttypelist]
+
+
+                                    </select>
+                                    <img src="assets/templates/common/images/error2.gif" width="12" height="12"></td>
+                                </tr>
+                                <tr>
+                                  <td class="item" align="right"><b>[CustomerInfo_check-routing]</b></td>
+                                  <td class="item"><input type="text" name="ff[id]_ocheckrouting" maxlength="9" size="10" class="txtBoxStyle" id="Text5">
+                                    <img src="assets/templates/common/images/error2.gif" width="12" height="12"></td>
+                                </tr>
+                                <tr>
+                                  <td class="item" align="right"><b>[CustomerInfo_check-acct]</b></td>
+                                  <td class="item"><input type="text" name="ff[id]_ocheckaccount" maxlength="30" size="10" class="txtBoxStyle" id="Text6">
+                                    <img src="assets/templates/common/images/error2.gif" width="12" height="12"></td>
+                                </tr>
+                              </table>
+                            </div></td>
+                        </tr>
+                        <!--END: CHECKGATEWAY-->
+                        <!--START: LINKGATEWAY-->
+                        <tr>
+                          <td class="titles"><input  onclick="javascript:checkoutSwitch(false);controlDivPayment('[id]');" name="payment" type="radio" value="online-[id]" [FIRSTOPTIONCHECKED]>
+                            &nbsp;[payment_description]</td>
+                        </tr>
+                        <tr>
+                          <td class="item"><div id="divPaymentOption[id]" name="divPaymentOption" style="display:none;">
+                              <table width="100%" cellpadding="0" cellspacing="3" id="Table21">
+                                <tr>
+                                  <td class="item">[payment_description_message]</td>
+                                </tr>
+                                <tr>
+                                  <td class="item"> Pay [payment_description]</td>
+                                </tr>
+                              </table>
+                            </div></td>
+                        </tr>
+                        <!--END: LINKGATEWAY-->
+                        <!--START: ELAYAWAYGATEWAY-->
+                        <tr>
+                          <td class="titles"><input  onclick="javascript:checkoutSwitch(false);controlDivPayment('[id]');" name="payment" type="radio" value="online-[id]" [FIRSTOPTIONCHECKED] ID="Radio3">
+                            &nbsp;[payment_description]</td>
+                        </tr>
+                        <tr>
+                          <td class="item"><div id="divPaymentOption[id]" name="divPaymentOption" style="display:none;">
+                              <table width="100%" cellpadding="0" cellspacing="3" id="Table1">
+                                <tr>
+                                  <td class="item">[payment_description_message]</td>
+                                </tr>
+                                <!--tr>
+														<td class="item"> Pay [payment_description]</td>
+													</tr-->
+                                <tr>
+                                  <td class="item"><a name="eLayAway"></a> <a onclick="eLayaway.button_click({amount:'[lay_order_total]',
+																		merchant_name:'[company_name]',
+																		max_lay_length: [max_lay_length],
+																		eci_form: 'eci_form',
+																		months_field: 'months',
+																		payment_frequency_field: 'payment_frequency',
+																		currency_code:'[currency_code]'}, event);" href="javascript:void(0);">Select Term</a>
+                                    <div name="divElayawayInfo" id="divElayawayInfo"></div></td>
+                                </tr>
+                              </table>
+                            </div></td>
+                        </tr>
+                        <!--END: ELAYAWAYGATEWAY-->
+                        <!--START: CUSTOM-->
+                        <tr>
+                          <td class="titles"><input  onclick="javascript:checkoutSwitch(false);controlDivPayment('[id]');" name="payment" type="radio" value="offline-[id]" [FIRSTOPTIONCHECKED] id="Radio4">
+                            &nbsp;[payment_type]</td>
+                        </tr>
+                        <tr>
+                          <td class="item"><div id="divPaymentOption[id]" name="divPaymentOption" style="display:none;">
+                              <table width="100%" cellpadding="0" cellspacing="3" id="Table27">
+                                <tr>
+                                  <td class="item">[payment_description]</td>
+                                </tr>
+                                <tr>
+                                  <td><span class="item">[payment_type]</span>
+                                </tr>
+                                <!--START: CUSTOM_FIELD-->
+                                <tr>
+                                  <td class="item"><b>[InputName]</b></span></td>
+                                  <td class="item" >[field]</td>
+                                </tr>
+                                <!--END: CUSTOM_FIELD-->
+                                <tr>
+                                  <td colspan="2"><table cellpadding="0" cellspacing="0" width="100%" id="Table15">
+                                      <tr>
+                                        <td class="borders" colspan="2"><img src="assets/templates/common/images/spacer.gif" width="100%" height="1"></td>
+                                      </tr>
+                                    </table></td>
+                                </tr>
+                              </table>
+                            </div></td>
+                        </tr>
+                        <!--END: CUSTOM-->
+
+                      </table>
+                    </div></td>
+                </tr>
+              </table>
+              <!--END: PAYMENT_BLOCK-->
+            </div>
+
+            <!--START: VME_NOTSELECTED-->
+            <div id="divVmeNotSelected">
+            <table border="0" width="100%" id="Table13">
+                <tr>
+                    <td class="titles">
+                    &nbsp;[payment_description]</td>
+                </tr>
+                <tr>
+                    <td class="titles">
+		            <!--START: vMeByVisa-->
+                        [vMeByVisaButton]
+                        <script>
+                            if (typeof jQuery == 'undefined')
+                                document.write("<script type=\"text/javascript\" src=\"assets/templates/common/js/jquery.min.js\"></" + "script>");
+
+                            function myCallbackFunctionForVmeEvents(VmeEventType, eventData) {
+                                if (VmeEventType == "purchase.success") {
+                                    var url = "vmebyvisa.asp?r=purchase.success&s=checkout&no-cache=" + Math.random();
+                                    var params = "mt=" + eventData.merchTrans;
+                                    params = params + "&ci=" + eventData.callId;
+                                    params = params + "&tp=" + eventData.type;
+                                    params = params + "&st=" + eventData.state;
+                                    params = params + "&sg=" + eventData.signature;
+                                    params = params + "&pi=" + eventData.productId;
+                                    if (eventData.subTotal) {
+                                        params = params + "&sta=" + eventData.subTotal.amount;
+                                        params = params + "&stc=" + eventData.subTotal.currency;
+                                    }
+                                    if (eventData.total) {
+                                        params = params + "&tta=" + eventData.total.amount;
+                                        params = params + "&ttc=" + eventData.total.currency;
+                                    }
+
+                                    jQuery.ajax({
+                                        url: url,
+                                        dataType: 'html',
+                                        type: 'POST',
+                                        data: params,
+                                        cache: false,
+                                        success: function (strResult) {
+                                            var arrResult = strResult.split("|");
+                                            if (arrResult.length < 2){
+                                                alert("Error processing v.me request. Please, try again." + strResult);}
+                                            else{
+                                                //doPayment();
+                                                //document.getElementById("divVmeNotSelected").style.display='none';
+                                                document.location.href = "checkout_one.asp";
+                                                }
+                                        },
+                                        error: reportError
+                                    });
+                                }
+                            }
+
+                            function reportError(jqXHR, textStatus) {
+                                if (jqXHR.status > 0) {
+                                    alert("Error processing v.me request. Please, try again.");
+                                    //alert(jqXHR.responseText);
+                                }
+                            }
+                        </script>
+		            <!--END: vMeByVisa-->
+                    </td>
+                </tr>
+            </table>
+            </div>
+            <!--END: VME_NOTSELECTED-->
+
+            <br />
+            <div id="divCheckoutQuestions" style="width:100%">
+              <!--START: checkout_questions-->
+              <table border="0" width="100%">
+                <tr>
+                  <td class="checkout-headers">[checkout1_checkoutquestions]</td>
+                </tr>
+                <tr>
+                  <td ><table width="100%" cellpadding="2" cellspacing="0" class="alternative" id="Table3">
+                      <tr>
+                        <td><!--START: questions-->
+                          [questions]
+                          <!--END: questions--></td>
+                      </tr>
+                    </table></td>
+                </tr>
+              </table>
+              <br />
+              <!--END: checkout_questions-->
+            </div>
+            <table border="0" width="100%">
+              <tr>
+                <td class="checkout-headers">[checkout3_Header-comment]</td>
+              </tr>
+              <tr>
+                <td><table width="100%" cellpadding="4" cellspacing="0" class="alternative" id="Table19">
+                    <tr>
+                      <td class="item">[checkout3_commentmessage]</td>
+                    </tr>
+                    <tr>
+                      <td><textarea onChange="clearContent(this);" name="ocomment" class="txtBoxStyle" cols="55" rows="3" id="Textarea2"></textarea></td>
+                    </tr>
+                  </table></td>
+              </tr>
+              <tr>
+                <td align="right"><div id="spanCheckout"><div id="divCheckout" name="divCheckout" style="width:80%;display:none;background:#ffffff;border:0px solid black;text-align:center;padding:10px;"> <br />
+                    Processing... </div>
+                    <a name="checkoutButton">
+                    <input type="button" value="[checkout3_submitbutton]" name="btnCheckout" id="btnCheckout" class="btn" onClick="doCheckout(this.form);"/></div></td>
+              </tr>
+            </table></td>
+        </tr>
+        <tr>
+          <td colspan="10"><!--START: CATEGORY_FOOTER-->
+
+            <table width="100%" cellspacing="0" cellpadding="2" border="0">
+              <tr>
+                <td class="item">[CONTENT]</td>
+              </tr>
+            </table>
+
+            <!--END: CATEGORY_FOOTER--></td>
+        </tr>
+      </table>
+    </div>
+  </form>
+  <script>
+	window.setTimeout('showHideShipping_init()',100);
+
+	function showHideShipping_init()
+	{
+		var objBody = getElementById_s('shipping_info');
+		var intWidth = objBody.clientWidth;
+		if (intWidth == 0)
+			window.setTimeout('showHideShipping_init()',100);
+		else
+			showHideShipping();
+	}
+
+	initCountry('[billing_country]','[billing_state_script]','billing_state','billing_country');
+	if (get_Element('shipping_state') != 'undefined' && get_Element('shipping_state') != null)
+		initCountry('[shipping_country]','[shipping_state_script]','shipping_state','shipping_country');
+
+	//Every time that there's no state for a selected country, that script deletes the state control and creates another one.
+	//That's why we need to re-create the validation for the state.
+	var billingStateType = document.billing.billing_state.type;
+	if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+		var shippingStateType = document.billing.shipping_state.type;
+
+	function check_stateValidator(type)
+	{
+		if (type == 'billing')
+		{
+			if (document.billing.billing_state.type != billingStateType)
+			{
+				frmvalidator.addValidation("billing_state","req","Please enter/select your billing state");
+				frmvalidator.addValidation("billing_state","maxlen=50");
+				billingStateType = document.billing.billing_state.type;
+			}
+		}
+		else
+		{
+			if (document.billing.shipping_state.type != shippingStateType)
+			{
+				frmvalidator.addValidation("shipping_state","req","Please enter/select your shipping state");
+				frmvalidator.addValidation("shipping_state","maxlen=50");
+				shippingStateType = document.billing.shipping_state.type;
+			}
+		}
+	}
+
+	function setValidation()
+	{
+		frmvalidator.clearAllValidations();
+
+		frmvalidator.addValidation("billing_firstname","req","Please enter your billing First Name");
+		frmvalidator.addValidation("billing_firstname","maxlen=20","Max length for billing First Name is 20");
+
+		frmvalidator.addValidation("billing_lastname","req","Please enter your billing Last Name");
+		frmvalidator.addValidation("billing_lastname","maxlen=20","Max length for billing Last Name is 20");
+
+		<!--START: phonerequiredscript-->
+		frmvalidator.addValidation("billing_phone","maxlen=18","Max length for billing Phone is 18");
+        if (get_Element('billing_country') != 'undefined' && get_Element('billing_country') != null)
+            if (get_Element('billing_country').value == "US")
+		        frmvalidator.addValidation("billing_phone","phone","Invalid phone number.");
+		frmvalidator.addValidation("billing_phone","req","Please enter your billing phone")
+		<!--END: phonerequiredscript-->
+
+		frmvalidator.addValidation("billing_address","maxlen=50");
+		frmvalidator.addValidation("billing_address","req","Please enter your billing address");
+
+		frmvalidator.addValidation("billing_city","maxlen=50");
+		frmvalidator.addValidation("billing_city","req","Please enter your billing city");
+
+        if (get_Element('billing_country').value == "US")
+        {
+		    frmvalidator.addValidation("billing_state","req","Please enter/select your billing state");
+		    frmvalidator.addValidation("billing_state","maxlen=50");
+        }
+
+		frmvalidator.addValidation("billing_zip","maxlen=15");
+		frmvalidator.addValidation("billing_zip","req","Please enter your billing zip code");
+
+		<!--START: emailrequiredscript-->
+		frmvalidator.addValidation("billing_email","maxlen=50","Max length for Email is 50");
+		frmvalidator.addValidation("billing_email","req","Please enter your email address");
+		frmvalidator.addValidation("billing_email","email");
+		<!--END: emailrequiredscript-->
+
+		<!--START: confirmemailscript-->
+		if (document.billing.billing_confirmemail != null && document.billing.billing_confirmemail != 'undefined')
+		{
+			frmvalidator.addValidation("billing_confirmemail","maxlen=50","Max length for Email is 50");
+			frmvalidator.addValidation("billing_confirmemail","req","Please confirm your Email.");
+			frmvalidator.addValidation("billing_confirmemail","email","Please confirm your Email.");
+			frmvalidator.setAddnlValidationFunction("confirmationValidation");
+		}
+		<!--END: confirmemailscript-->
+
+		<!--START: passwordrequiredscript-->
+		frmvalidator.addValidation("pass","maxlen=20");
+		frmvalidator.addValidation("pass","req","Please enter your new password (registration is required)");
+		<!--END: passwordrequiredscript-->
+
+		frmvalidator.addValidation("billing_country","dontselect=0");
+
+		if (get_Element('sameAsBilling') != 'undefined' && get_Element('sameAsBilling') != null)
+			if (!document.billing.sameAsBilling.checked)
+			{
+				frmvalidator.addValidation("shipping_firstname","req","Please enter your shipping First Name");
+				frmvalidator.addValidation("shipping_firstname","maxlen=20","Max length for shipping First Name is 20");
+
+				frmvalidator.addValidation("shipping_lastname","req","Please enter your shipping Last Name");
+				frmvalidator.addValidation("shipping_lastname","maxlen=20","Max length for shipping Last Name is 20");
+				<!--START: phonerequiredscript-->
+				frmvalidator.addValidation("shipping_phone","maxlen=18","Max length for shipping Phone is 18");
+                if (get_Element('shipping_country') != 'undefined' && get_Element('shipping_country') != null)
+                    if (get_Element('shipping_country').value == "US")
+		                frmvalidator.addValidation("shipping_phone","phone","Invalid phone number.");
+				frmvalidator.addValidation("shipping_phone","req","Please enter your shipping phone")
+				<!--END: phonerequiredscript-->
+				frmvalidator.addValidation("shipping_address","maxlen=50");
+				frmvalidator.addValidation("shipping_address","req","Please enter your shipping address");
+
+				frmvalidator.addValidation("shipping_city","maxlen=50");
+				frmvalidator.addValidation("shipping_city","req","Please enter your shipping city");
+
+                if (get_Element('shipping_country').value == "US")
+                {
+				    frmvalidator.addValidation("shipping_state","req","Please enter/select your shipping state");
+				    frmvalidator.addValidation("shipping_state","maxlen=50");
+                }
+
+				frmvalidator.addValidation("shipping_zip","maxlen=15");
+				frmvalidator.addValidation("shipping_zip","req","Please enter your shipping zip code");
+
+				frmvalidator.addValidation("shipping_country","dontselect=0");
+			}
+
+	}
+</script>
+<script type="text/javascript">
+//You should create the validator only after the definition of the HTML form
+var frmvalidator = new Validator("billing");
+frmvalidator.EnableMsgsTogether();
+
+function confirmationValidation()
+{
+    if(get_Element("billing_email").value != get_Element("billing_confirmemail").value)
+    {
+        alert('The Email does not match.');
+        return false;
+    }
+    return true;
+}
+</script>
+
+  <!--START: ELAYAWAYGATEWAYSCRIPTS-->
+  <script type="text/javascript" src="https://app2.elayaway.com/javascripts/prototype.js"></script>
+  <script type="text/javascript" src="https://app2.elayaway.com/javascripts/elayaway.js"></script>
+  <script>
+		function eLayAwayPost()
+		{
+			//Hide the calculator
+			var myDivCalculator = document.getElementById("elayaway_configurator0");
+			myDivCalculator.style.display = 'none';
+
+			//Write the selected payment configuration
+			var myDivElayaway = document.getElementById("divElayawayInfo");
+			var intMonths = 0;
+			intMonths = eval(parseInt(document.eci_form.months.value)+1);
+			var myString = "Selected term: " + intMonths + " months";
+			myDivElayaway.innerHTML = myString;
+
+			document.eci_form.elayawayconfigured.value = "1";
+		}
+		</script>
+  <form name="eci_form" id="eci_form" method="POST" action="javascript:eLayAwayPost();">
+    <input type="hidden" value="0" name="elayawayconfigured" id="elayawayconfigured"/>
+    <input type="hidden" value="" name="months" id="months"/>
+    <input type="hidden" value="" name="payment_frequency" id="payment_frequency"/>
+  </form>
+  <!--END: ELAYAWAYGATEWAYSCRIPTS-->
+
+  <!------------------------------------------------------------------------------>
+  <!-- BEGIN TEMPLATES BLOCKS -->
+  <!------------------------------------------------------------------------------>
+  <!--START: addressType-->
+  <table width="100%" cellpadding="0" cellspacing="0" id="Table9">
+    <tr>
+      <td class="item" align="right" nowrap><b>[CustomerInfo_address_type]</b>&nbsp;</td>
+      <td width="100%"><select name="shipping_addresstype" id="shipping_addresstype" class="txtBoxStyle" onChange="check_address('addresstype');">
+
+
+				[addressTypeDropDown]
+
+
+        </select></td>
+    </tr>
+  </table>
+  <hr>
+  <!--END: addressType-->
+  <!--START: CARRIER-->
+  <table width="100%" cellpadding="0" cellspacing="0" id="Table24">
+    <!--START: displayblock-->
+    <tr>
+      <td colspan="3"><div align="left"><img src="/assets/templates/common/images/[OPTION-SHIPPER].gif"></div></td>
+      <td colspan="2" align="right"><a href="javascript:click_ship();" onClick="controlDivShipping('[OPTION-SHIPPER]');">Display Rates</a></td>
+    </tr>
+    <!--END: displayblock-->
+    <tr>
+      <td colspan="5"><div name="divShipping[OPTION-SHIPPER]" id="divShipping[OPTION-SHIPPER]" class="ship" style="display:none;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" id="Table25">
+            <!--START: SHIPPING_OPTION-->
+            <tr>
+              <td><div align="right"></div></td>
+              <td align="left"><input type="radio" name="shipping" value="[ID]" [SELECTED] id="radio_ship" onClick="select_shipping([ID]);"></td>
+              <td class="item" align="left" width="200"><!--[OPTION-SHIPPER]-->
+                [OPTION-DESCRIPTION]</td>
+              <td>&nbsp;</td>
+              <td class="item" align="left">[OPTION-PRICE2]</td>
+            </tr>
+            <!--END: SHIPPING_OPTION-->
+          </table>
+        </div></td>
+    </tr>
+    <tr>
+      <td class="borders" colspan="5"><img src="assets/templates/common/images/spacer.gif" width="100%" height="1"></td>
+    </tr>
+  </table>
+  <!--END: CARRIER-->
+  <!--START: checkout_questions_templates-->
+  <!--START: textarea-format-->
+  <table>
+    <tr>
+      <td align="right" class="item"><!--START: req[id]-->
+        <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+        <!--END: req[id]-->
+        <b>[question]</b></td>
+      <td><textarea cols="30" rows="5" name="cq[id]" class="txtBoxStyle" id="Textarea1">[answer]</textarea></td>
+    </tr>
+  </table>
+  <!--END: textarea-format-->
+  <!--START: text-format-->
+  <table id="Table8">
+    <tr>
+      <td align="right" class="item"><!--START: req[id]-->
+        <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+        <!--END: req[id]-->
+        <b>[question]</b></td>
+      <td><input type="text" size="30" name="cq[id]" value="[answer]" class="txtBoxStyle"></td>
+    </tr>
+  </table>
+  <!--END: text-format-->
+  <!--START: checkbox-format-->
+  <table id="Table10">
+    <tr>
+      <td><!--START: req[id]-->
+        <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+        <!--END: req[id]-->
+
+        <input type="checkbox" name="cq[id]" class="txtBoxStyle" value="[answer]" [selected] id="Checkbox2"></td>
+      <td align="right" class="item"><b>[question]</b></td>
+    </tr>
+  </table>
+  <!--END: checkbox-format-->
+  <!--START: radio-format-->
+  <table id="Table11">
+    <tr>
+      <td align="right" class="item"><!--START: req[id]-->
+        <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+        <!--END: req[id]-->
+        <b>[question]</b></td>
+      <td><!--START: option-->
+
+        <input type="radio" name="cq[id]" value="[option]" class="txtBoxStyle" [selected] id="Radio1">
+        [option]<br />
+
+        <!--END: option--></td>
+    </tr>
+  </table>
+  <!--END: radio-format-->
+  <!--START: dropdown-format-->
+  <table>
+    <tr>
+      <td align="right" class="item"><!--START: req[id]-->
+        <img src="assets/templates/common/images/error2.gif" width="12" height="12">
+        <!--END: req[id]-->
+        <b>[question]</b></td>
+      <td><select name="cq[id]" id="Select4">
+          <!--START: option-->
+          <option value="[option]" [selected]>[option]</option>
+          <!--END: option-->
+        </select></td>
+    </tr>
+  </table>
+  <!--END: dropdown-format-->
+  <!--END: checkout_questions_templates-->
+</center>
+
+<!--START: verByVisa-->
+<script language="javascript" type="text/javascript">
+    function openVerByVisa(strUrl) {
+        add_overlay("billing_div", 1);
+        var elt = jQuery('#divVerByVisa');
+        document.getElementById("iframeVisa").src = strUrl;
+
+        // calculate the center of the page using the browser and element dimensions
+        var y = (jQuery(document).height() - jQuery('#divVerByVisa').height()) / 2;
+        var x = (jQuery(document).width() - jQuery('#divVerByVisa').width()) / 2;
+
+        // set the style of the element so it is centered
+        var styles = { position: 'absolute',
+            top: y + 'px',
+            left: x + 'px',
+            display: 'block'
+        };
+
+        elt.css(styles);
+        elt.scrollTo();
+    }
+    function closeVerByVisa(bolDoCheckout, strMsg) {
+        remove_overlay("billing_div");
+        var elt = jQuery('#divVerByVisa');
+        var styles = { position: 'absolute',
+            top: '0px',
+            left: '0px',
+            display: 'none'
+        };
+        elt.css(styles);
+        document.getElementById("iframeVisa").src = "assets/images/spacer.gif";
+
+        if (bolDoCheckout) {
+            doCheckout(document.billing);
+        }
+        else {
+            if (strMsg != "") {
+                var objDiv = get_Element('divCheckout');
+                objDiv.style.display = 'block';
+                objDiv.innerHTML = strMsg;
+            }
+        }
+    }
+</script>
+<div id="divVerByVisa" style="display:none;"> <br />
+  <div style="background-color:#fff; text-align:right; border: 1px solid #ccc; box-shadow: 0 0 5px rgba(0, 0, 0, 0.4); -moz-box-shadow: 0 0 5px rgba(0, 0, 0, 0.4); -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);"> <a href="#" onclick="javascript:closeVerByVisa();//window.location.reload();">close</a>&nbsp;&nbsp;
+    <div style="text-align:center;">
+      <iframe id="iframeVisa" name="iframeVisa" src="assets/images/spacer.gif" width="750" height="450" scrolling="no" frameborder="0"></iframe>
+    </div>
+  </div>
+</div>
+<!--END: verByVisa-->
+
+<!--START: paypaladvance-->
+<form method="post" action="https://payflowlink.paypal.com" name="frmPayPalAdv" id="frmPayPalAdv" target="iframePayPalAdv">
+	<input type="hidden" name="SECURETOKEN" value="">
+	<input type="hidden" name="SECURETOKENID" value="" >
+</form>
+<script language="javascript" type="text/javascript">
+    function openPayPalAdv(strToken, strTokenId) {
+        var elt = document.getElementById("divPayPalAdv");
+
+        //document.getElementById("iframePayPalAdv").src = "https://payflowlink.paypal.com/?SECURETOKEN=" + strToken + "&SECURETOKENID=" + strTokenId;
+        document.getElementById("frmPayPalAdv").SECURETOKEN.value = strToken;
+        document.getElementById("frmPayPalAdv").SECURETOKENID.value = strTokenId;
+        document.getElementById("frmPayPalAdv").submit();
+
+        elt.style.display = 'block';
+    }
+    function checkoutSwitch(bolHide) {
+        if (document.getElementById("spanCheckout")) {
+            if (bolHide)
+                document.getElementById("spanCheckout").style.display = 'none';
+            else
+                document.getElementById("spanCheckout").style.display = 'block';
+        }
+    }
+</script>
+<!--END: paypaladvance-->
+
+<!--START: kount-->
+<iframe width="1" height="1" frameborder="0" scrolling="no" src="/logo_k.htm?m=[kount_merchantid]&s=[kount_sessionid]">
+<img width=1 height=1 src="/logo_k.gif?m=[kount_merchantid]&s=[kount_sessionid]">
+</iframe>
+<!--END: kount-->
+
+<input type="hidden" name="hdnAddrressValidatorResult" id="hdnAddrressValidatorResult" value="" />
+<div id="divAddrressValidator" style="display:none;">
+  <!--START: AddressValidatorBlock-->
+  <div style="background-color: White; padding: 30px; -webkit-box-shadow: 0px 0px 12px rgba(50, 50, 50, 0.5); -moz-box-shadow: 0px 0px 12px rgba(50, 50, 50, 0.5); box-shadow: 0px 0px 12px rgba(50, 50, 50, 0.5);">
+    <!--START: AddressValidatorBlock_ValidationFailed-->
+    <div>[result_msg]</div>
+    <!--END: AddressValidatorBlock_ValidationFailed-->
+    <!--START: AddressValidatorBlock_ValidationSuggestion-->
+    <div> [result_msg]
+      <!--START: AddressValidatorBlock_ValidationSuggestion_SingleAddressBlock-->
+      <br />
+      <br />
+      <strong>[checkout1_AddressValidator_SuggestedAddress]</strong> <a style="text-decoration:underline;" href="#" onclick="javascript:selectAddress('[AddrressValidator_address1]', '[AddrressValidator_address2]', '[AddrressValidator_city]', '[AddrressValidator_state]', '[AddrressValidator_zip]', '[AddrressValidator_addresstype]', '[AddrressValidator_rdi]');">[AddrressValidator_address], [AddrressValidator_city], [AddrressValidator_state], [AddrressValidator_zip]</a>
+      <!--END: AddressValidatorBlock_ValidationSuggestion_SingleAddressBlock-->
+      </div>
+    <!--END: AddressValidatorBlock_ValidationSuggestion-->
+    <!--START: AddressValidatorBlock_ValidationSuggestion_ContinueWithEnteredAddress-->
+    <br />
+    <a style="text-decoration:underline;" href="javascript:void(0);" onclick="javascript:addressValidatorContinue('[AddrressValidator_addresstype]');">[checkout1_AddressValidator_Continue]</a>
+	<br />
+    <!--END: AddressValidatorBlock_ValidationSuggestion_ContinueWithEnteredAddress-->
+    <br /><a style="text-decoration:underline;" href="javascript:void(0);" onclick="javascript:closeAddressValidatorModal();">[checkout1_AddressValidator_Close]</a></div>
+  <!--END: AddressValidatorBlock-->
+</div>
+
+<!--START: VME_SELECTED_SCRIPT-->
+<script>
+    function add_vme_overlay(panel)
+    {
+        var objBody = getElementById_s(panel);
+        var objOverlay = document.createElement("div");
+
+        objOverlay.setAttribute('id','overlay_'+panel);
+        objOverlay.className='overlay';
+        objOverlay.style.position = 'absolute';
+        objOverlay.style.textAlign = 'center';
+        objOverlay.style.width = objBody.clientWidth+"px";
+        objOverlay.style.height = objBody.clientHeight+"px";
+        objBody.insertBefore(objOverlay, objBody.firstChild);
+        objOverlay.style.display = 'block';
+
+        get_Element('overlay_'+panel).innerHTML = '<table border=\"0\" width=\"100%\"><tr><td style=\"text-align: left;\"><div style=\"margin:10px 0px 0px 0px;\"><img src=\"assets/templates/common/images/vme_accpt_mark.png\"></div></td></tr></table>';
+    }
+    add_vme_overlay("billing_info2");
+    add_vme_overlay("billing_info2");
+    add_vme_overlay("billing_info2");
+    add_vme_overlay("billing_info2");
+</script>
+<!--END: VME_SELECTED_SCRIPT-->
