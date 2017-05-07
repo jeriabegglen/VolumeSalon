@@ -102,6 +102,16 @@ class Invoice(models.Model):
     def __str__(self):
         return self.name
 
+class Taxes(models.Model):
+    id = models.AutoField(primary_key=True)
+    taxRate = models.DecimalField(max_digits=10, decimal_places=2)
+    created = models.DateTimeField(auto_now=True)
+    class Meta:
+        verbose_name = 'taxes'
+        verbose_name_plural = 'taxes'
+    def __int__(self):
+        return self.taxRate
+
 class Transaction(models.Model):
     id = models.AutoField(primary_key=True)
     transactionId = models.CharField(max_length=10)

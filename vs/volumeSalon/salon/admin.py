@@ -9,6 +9,7 @@ from .models import Stylist
 from .models import Service
 from .models import Invoice
 from .models import Transaction
+from .models import Taxes
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -57,3 +58,7 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display = ['transactionId', 'total', 'subTotal', 'taxes', 'discount']
     list_filter = ['transactionId', ('created', DateRangeFilter)]
 admin.site.register(Transaction, TransactionAdmin)
+
+class TaxesAdmin(admin.ModelAdmin):
+    list_display = ['taxRate', 'created']
+admin.site.register(Taxes, TaxesAdmin)

@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.forms import ModelForm
 from django.conf import settings
-from .models import Client, Category, Product, BoutiqueItem, Stylist, Service, Invoice, Transaction
+from .models import Client, Category, Product, BoutiqueItem, Stylist, Service, Invoice, Transaction, Taxes
 from .forms import AccountForm, AccountEditForm
 import json
 from random import randint
@@ -41,17 +41,24 @@ def POS(request):
     all_boutiqueItems = BoutiqueItem.objects.all()
 
     if request.method == 'POST':
+        #print(request.body)
         str=((request.body).decode('utf-8'))
         req = json.loads(str)
         data = req["items"]
         tran = req["transaction"]
         tid=createTransactionId()
+
+        for i in range (0, len(data)):
+            if data[i]['ptype'] == 'product':
+                p = Product.objects.get(id=data[i]["id"])
+                if p.in_stock <= 0:
+                    return HttpResponse(json.dumps({'fail' : p.name}))
+                p.in_stock -= 1
+                p.save()
+
         for i in range (0, len(data)):
             invoiceDB = Invoice(itemId=data[i]['id'], price=data[i]['price'], name=data[i]['name'], transactionId=tid, isStylist=data[i]['isStylist'])
             invoiceDB.save()
-            if data[i]['isStylist'] != 'true':
-                '''invoiceDB.objects.get(id=data[i]['id'])
-                userprofile = UserProfiles.objects.get(user=request.user)'''
         transactionDB = Transaction(transactionId=tid, total=tran["total"], subTotal=tran["subTotal"], taxes=tran["taxes"], discount=tran["discount"])
         transactionDB.save()
 
@@ -59,13 +66,16 @@ def POS(request):
         resp['success'] = "true"
         return HttpResponse(json.dumps(resp))
 
+
+    t = Taxes.objects.order_by('-id').latest('created')
     context = {'nbar': 'home',
                 'heading': 'Volume Salon Checkout',
                 'mission': 'Making you beautiful',
                 'all_services': all_services,
                 'all_products': all_products,
                 'all_stylists': all_stylists,
-                'all_boutiqueItems': all_boutiqueItems
+                'all_boutiqueItems': all_boutiqueItems,
+                'taxRate': t.taxRate,
                 }
 
     return render(request, 'salon/pos.html', context)
