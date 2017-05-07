@@ -1,0 +1,101 @@
+{% extends 'salon/base.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+<div class="spacer"></div>
+
+<!-- CSS styles for standard search box -->
+<style type="text/css">
+	#tfheader{
+		background-color:#8533ff;
+	}
+	#tfnewsearch{
+		float:right;
+		padding:20px;
+	}
+	.tftextinput{
+		margin: 0;
+		padding: 5px 15px;
+		font-family: Arial, Helvetica, sans-serif;
+		font-size:14px;
+		border:1px solid #0076a3; border-right:0px;
+		border-top-left-radius: 5px 5px;
+		border-bottom-left-radius: 5px 5px;
+	}
+	.tfbutton {
+		margin: 0;
+		padding: 5px 15px;
+		font-family: Arial, Helvetica, sans-serif;
+		font-size:14px;
+		outline: none;
+		cursor: pointer;
+		text-align: center;
+		text-decoration: none;
+		color: #ffffff;
+		border: solid 1px #0076a3; border-right:0px;
+		background: #0095cd;
+		background: -webkit-gradient(linear, left top, left bottom, from(#00adee), to(#0078a5));
+		background: -moz-linear-gradient(top,  #00adee,  #0078a5);
+		border-top-right-radius: 5px 5px;
+		border-bottom-right-radius: 5px 5px;
+	}
+	.tfbutton:hover {
+		text-decoration: none;
+		background: #007ead;
+		background: -webkit-gradient(linear, left top, left bottom, from(#0095cc), to(#00678e));
+		background: -moz-linear-gradient(top,  #0095cc,  #00678e);
+	}
+	/* Fixes submit button height problem in Firefox */
+	.tfbutton::-moz-focus-inner {
+	  border: 0;
+	}
+	.tfclear{
+		clear:both;
+	}
+</style>
+</head>
+<body>
+	<!-- HTML for SEARCH BAR -->
+	<div id="tfheader">
+		<form id="tfnewsearch" method="POST" action="/productInfo/">
+          {% csrf_token %}
+		        <input type="text" class="tftextinput" name="q" size="21" maxlength="120" placeholder="search sku" required>
+            <input type="submit" value="search" class="tfbutton">
+		</form>
+	<div class="tfclear"></div>
+	</div>
+
+  <div style='margin-top: 10px'>
+    <table class='table table-responsive'>
+      <tr>
+        <td>Name</td>
+        <td>Description</td>
+        <td>Salon Cost</td>
+        <td>Retail Cost</td>
+        <td>In Stock</td>
+        <td>Minimum In Stock</td>
+        <td>SKU</td>
+        <td>Size</td>
+      </tr>
+    {% for p in all_products %}
+      <!--<div class="selItemCustom" >{{ service.name }}</div>-->
+      <tr>
+        <td>{{p.name}}</td>
+        <td>{{p.description}}</td>
+        <td>{{p.salon_cost}}</td>
+        <td>{{p.retail_cost}}</td>
+        <td>{{p.in_stock}}</td>
+        <td>{{p.minimum_in_stock}}</td>
+        <td>{{p.sku}}</td>
+        <td>{{p.size}}</td>
+      </tr>
+
+    {% endfor %}
+  </table>
+  </div>
+</body>
+
+
+{% endblock %}

@@ -1,8 +1,11 @@
-{% include 'salon/header.html' %}
+{% extends 'salon/base.html' %}
 
-<div id="main" style="height:300px;">
+{% block jumbotron %}
+<div class="spacer"></div>
+<div class="jumbotron">
+  <div class="container-fluid text-center">
     <h1>{{ heading }}</h1>
-    <p> {{ content|safe }} </p>
+    <p>{{ mission }}</p>
+  </div>
 </div>
-
-{% include 'salon/footer.html' %}
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends 'salon/base.html' %}
+
+{% block content %}
+
+<div class="spacer"></div>
+<div style='margin-top: 20px' class='panel panel-default'>
+<div class='panel-heading'>Checkout</div>
+<div class='panel-body'>
+
+<div class="row">
+  <div class="col-md-5">
+    <div class="panel panel-default">
+    <div class="panel-heading">Select the Products and/or Services:</div>
+      <div class="panel-body">
+        {% for service in all_services %}
+          <!--<div class="selItemCustom" >{{ service.name }}</div>-->
+
+          <div class="row">
+            <div class='col-xs-6'>{{ service.name }}</div>
+            <div class='col-xs-3'><input id="custom{{ service.id }}" type='text' style='width: 30px;' /></div>
+            <div class='col-xs-3'><button  pname='{{ service.name }}' itemId='{{ service.id }}' class='selItemCustom btn btn-xs btn-default btn-block'>add</button></div>
+          </div>
+
+
+        {% endfor %}
+        {% for product in all_products %}
+        <!--
+          <div class="selItem" id="{{ product.id }}">{{ product.name }}</div> -->
+          <div class="row">
+            <div class='col-xs-6'>{{product.name}}</div>
+            <div class='col-xs-3'></div>
+            <div class='col-xs-3'><button id='{{ product.id }}' price='{{ product.retail_cost }}' pname='{{ product.name }}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+          </div>
+        {% endfor %}
+        {% for boutiqueItem in all_boutiqueItems %}
+          <!--<div class="selItem">{{ boutiqueItem.name }}</div>-->
+
+          <div class="row">
+            <div class='col-xs-6'>{{ boutiqueItem.name }}</div>
+            <div class='col-xs-3'></div>
+            <div class='col-xs-3'><button id='{{boutiqueItem.id}}' price='{{ boutiqueItem.retail_price }}' pname='{{boutiqueItem.name}}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+          </div>
+
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+      <div class="panel panel-default">
+      <div class="panel-heading">Select a Stylist</div>
+        <div class="panel-body">
+          {% for stylist in all_stylists %}
+          <div class="row">
+            <div class='col-xs-6'>{{ stylist.name }}</div>
+            <div class='col-xs-6'><button class="selStylist" stylistId="{{ stylist.id }}" sname="{{ stylist.name }}" style="cursor: pointer;" price='' pname='' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+   <div class="panel panel-default">
+             <div class="panel-heading">To be submitted:</div>
+                <div class="panel-body">
+             <div id="toBeSubmitted"></div>
+             <hr />
+             <div class="row">
+               <div class="col-xs-6">Subtotal</div>
+               <div id="subTotal" class="col-xs-6 text-right"></div>
+             </div>
+             <div class="row">
+               <div class="col-xs-6"><button data-toggle="modal" data-target="#myModal" class="btn btn-link btn-xs" type="button">Discount</button></div>
+               <div class="col-xs-6 text-right" id="discount"></div>
+             </div>
+<!--Begin modal-->
+             <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+               <div class="modal-dialog" role="document">
+                 <div class="modal-content">
+                   <div class="modal-header">
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                     <h4 class="modal-title">Discount</h4>
+                   </div>
+                   <div class="modal-body">
+                     <div class="row">
+                      <div class="col-xs-6"><h3><input id="dollar" class="dType" type="radio" name="dType" checked="checked"/> Dollar Amount</h3></div>
+                      <div class="col-xs-6"><h3><input id="percent" class="dType" type="radio" name="dType"/> Percentage</h3></div>
+                     </div>
+                    <div class="row">
+                      <div class="col-xs-12"><input id="dInput" type="text" class="form-control"/></div>
+                    </div>
+                   </div>
+                   <div class="modal-footer">
+                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                     <button id="applyDiscount" type="button" class="btn btn-primary">Apply Discount</button>
+                   </div>
+                 </div><!-- /.modal-content -->
+               </div><!-- /.modal-dialog -->
+             </div><!-- /.modal -->
+
+
+             <div id="successModal" class="modal fade" tabindex="-1" role="dialog">
+               <div class="modal-dialog" role="document">
+                 <div class="modal-content">
+                   <div class="modal-header">
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                     <h4 class="modal-title">Success</h4>
+                   </div>
+                   <div class="modal-body">
+                     <h2 class='text-center'>Transaction successful</h2>
+                   </div>
+                   <div class="modal-footer">
+                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                   </div>
+                 </div><!-- /.modal-content -->
+               </div><!-- /.modal-dialog -->
+             </div><!-- /.modal -->
+
+
+             <div class="row">
+               <div class="col-xs-6">Taxes 7.65%</div>
+               <div id="taxes" class="col-xs-6 text-right"></div>
+             </div>
+             <div class="row">
+               <div class="col-xs-6">Total</div>
+               <div id="total" class="col-xs-6 text-right"></div>
+             </div>
+             </div>
+                    <div class="panel-footer"> <button class="btn btn-primary btn-block" id="submit">submit</button> </div>
+          </div>
+    </div>
+</div>
+</div>
+</div>
+<script>
+  var total=0.0;
+  var subTotal=0.0;
+  var discount=0.0;
+  var taxes=0.0;
+  function calculate(){
+    subTotal=0.0;
+    var prices=$(".prices");
+    $.each(prices, function(key, value){
+      subTotal = subTotal + parseFloat($(value).html());
+
+    });
+    $("#subTotal").html(subTotal.toFixed(2));
+    subTotal = subTotal - discount;
+    taxes=subTotal*.0765;
+    total=(subTotal*.0765)+subTotal;
+
+    $("#total").html(total.toFixed(2));
+    $("#taxes").html("-"+taxes.toFixed(2));
+    $("#discount").html("-"+parseFloat(discount).toFixed(2));
+  }
+
+  $(".selStylist").click(function(){
+    var stylistName=$(this).attr("sname");
+    var html;
+    var stylistId=$(this).attr("stylistId");
+    html=createToBeSubmitted(stylistName, stylistId, "stylist");
+    $("#toBeSubmitted").append(html);
+    $(".removeItem").unbind();
+    $(".removeItem").click(function(){
+      $(this).parent().parent().parent().remove();
+      calculate();
+    });
+    calculate();
+  });
+
+  $(".selItem").click(function(){
+    var html;
+    var itemId=$(this).attr("id");
+    var pname=$(this).attr("pname");
+    var price=$(this).attr("price");
+
+    html=createToBeSubmitted(pname, itemId, price);
+    $("#toBeSubmitted").append(html);
+
+
+    $(".removeItem").unbind();
+    $(".removeItem").click(function(){
+    $(this).parent().parent().parent().remove();
+    calculate();
+    });
+    calculate();
+  });
+
+
+
+  $(".selItemCustom").click(function(){
+    var html;
+    var pname=$(this).attr("pname");
+    var itemId=$(this).attr("itemId");
+    var price= $("#custom"+itemId).val();
+
+    $(".removeItem").unbind();
+    //$("#toBeSubmitted").append("<div class='addedItem'><i class='glyphicon glyphicon-remove removeItem btn-danger'></i>&nbsp;"+item+"&nbsp;<input name='"+item+"' class='cutomPrice'/></div>");
+    html=createToBeSubmitted(pname, itemId, price);
+    $("#toBeSubmitted").append(html);
+
+    $(".removeItem").click(function(){
+      $(this).parent().parent().parent().remove();
+      calculate();
+    });
+    calculate();
+  });
+
+</script>
+
+
+<script>
+  $("#submit").click(function(){
+    var addedItems=$(".addItem");
+
+    var itemsToSubmit= [];
+    var str="";
+    var str1="item[]=";
+    var result="";
+    $(addedItems).each(function(j, el){
+      var isST=false;
+      if($(el).attr("stylist")){
+        isST=true;
+      }
+      itemsToSubmit[j] = {
+         name: $(el).attr("itemName"),
+         id: $(el).attr("itemId"),
+         price: $(el).attr("itemPrice"),
+         isStylist: isST
+      };
+      //str=$.param(itemsToSubmit[0]);
+      //itemsToSubmit[j]=$(el).html();
+      //str+="items[]="+addedItem;
+      //result+=str1+"&"+str;
+    });
+
+    sendData = {
+      items: itemsToSubmit,
+      transaction: {
+        total: total,
+        subTotal: subTotal,
+        taxes: taxes,
+        discount: discount
+      }
+    }
+
+    $.ajax({
+      type: "POST",
+      url: "/POS/?transaction=true",
+      data: JSON.stringify(sendData),
+
+      beforeSend: function(xhr, settings) {
+          if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+              // Only send the token to relative URLs i.e. locally.
+              xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+          }
+      },
+      success: function(callback) {
+          var result = JSON.parse(callback);
+          if (result.success) {
+
+            $("#toBeSubmitted").html("");
+            calculate();
+            $("#successModal").modal("show");
+
+          }
+
+      }
+
+    });
+
+    //console.log(result);
+
+    //console.log(jQuery.param(JSON.stringify(itemsToSubmit)));
+
+  });
+  function createToBeSubmitted(pname, itemId, price){
+    var st="";
+    if (price == "stylist"){
+      st="stylist='true'";
+      price=0.0;
+    }
+    var html="";
+    html+="<div class='addItem' "+st+" itemName='"+pname+"' itemId='"+itemId+"' itemPrice='"+price+"'>";
+    html+="<div class='row'>";
+    html+="<div class='col-xs-2'><i class='glyphicon glyphicon-remove removeItem btn-danger'></i></div>";
+    html+="<div class='col-xs-6'><span>"+pname+"</span></div>";
+    html+="<div class='col-xs-4 prices'>"+parseFloat(price).toFixed(2)+"</div>";
+    html+="</div>";
+    html+="</div>";
+    return html;
+  }
+
+  function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie != '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+              var cookie = jQuery.trim(cookies[i]);
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  $("#applyDiscount").click(function(){
+    var number = $("#dInput").val();
+    if ($("#dollar").is(":checked")){
+      discount=number;
+    }
+    else {
+     alert("test");
+     discount = (subTotal * (number/100));
+    }
+    $("#myModal").modal("hide");
+    calculate();
+  });
+
+</script>
+{% endblock %}

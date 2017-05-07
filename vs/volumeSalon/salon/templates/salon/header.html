@@ -1,31 +1,14 @@
-{% load staticfiles %}
-
+{% load static %}
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{{ title }}</title>
-        <link href="{% static 'salon/css/style.css' %}" rel="stylesheet" />
-    </head>
-    <body>
-        <header>
-            Volume Salon
-            <div id="loginInfo">
-            {% if user.is_authenticated %}
-                Welcome, {{ user.first_name }} |
-                <a href="{% url 'logout' %}">Logout</a>
-            {% else %}
-                <a href="{% url 'login' %}">Login</a>
-            {% endif %}
-        </div>
-        </header>
-
-        <nav>
-            <ul>
-                <!--<li><a href="/index/">Home</a></li>
-                <li><a href="/salon/">View all clients</a></li>
-                <li><a href="/addClient/">Add New Client</a></li>-->
-            </ul>
-        </nav>
+<html lang="en">
+<head>
+  <title>{% block title %}Volume Salon Checkout{% endblock %}</title>
+  <meta charset="utf-8">
+  <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="{% static 'salon/css/base.css' %}">
+</head>
+<body>
