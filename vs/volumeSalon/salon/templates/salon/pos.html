@@ -18,7 +18,7 @@
           <div class="row">
             <div class='col-xs-6'>{{ service.name }}</div>
             <div class='col-xs-3'><input id="custom{{ service.id }}" type='text' style='width: 30px;' /></div>
-            <div class='col-xs-3'><button  pname='{{ service.name }}' itemId='{{ service.id }}' class='selItemCustom btn btn-xs btn-default btn-block'>add</button></div>
+            <div class='col-xs-3'><button ptype='service'  pname='{{ service.name }}' itemId='{{ service.id }}' class='selItemCustom btn btn-xs btn-default btn-block'>add</button></div>
           </div>
 
 
@@ -29,7 +29,7 @@
           <div class="row">
             <div class='col-xs-6'>{{product.name}}</div>
             <div class='col-xs-3'></div>
-            <div class='col-xs-3'><button id='{{ product.id }}' price='{{ product.retail_cost }}' pname='{{ product.name }}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+            <div class='col-xs-3'><button ptype='product' id='{{ product.id }}' price='{{ product.retail_cost }}' pname='{{ product.name }}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
           </div>
         {% endfor %}
         {% for boutiqueItem in all_boutiqueItems %}
@@ -38,7 +38,7 @@
           <div class="row">
             <div class='col-xs-6'>{{ boutiqueItem.name }}</div>
             <div class='col-xs-3'></div>
-            <div class='col-xs-3'><button id='{{boutiqueItem.id}}' price='{{ boutiqueItem.retail_price }}' pname='{{boutiqueItem.name}}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+            <div class='col-xs-3'><button ptype='boutique' id='{{boutiqueItem.id}}' price='{{ boutiqueItem.retail_price }}' pname='{{boutiqueItem.name}}' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
           </div>
 
         {% endfor %}
@@ -53,7 +53,7 @@
           {% for stylist in all_stylists %}
           <div class="row">
             <div class='col-xs-6'>{{ stylist.name }}</div>
-            <div class='col-xs-6'><button class="selStylist" stylistId="{{ stylist.id }}" sname="{{ stylist.name }}" style="cursor: pointer;" price='' pname='' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
+            <div class='col-xs-6'><button ptype='stylist' class="selStylist" stylistId="{{ stylist.id }}" sname="{{ stylist.name }}" style="cursor: pointer;" price='' pname='' class='selItem btn btn-xs btn-default btn-block'>add</button></div>
           </div>
         {% endfor %}
       </div>
@@ -101,14 +101,16 @@
 
 
              <div id="successModal" class="modal fade" tabindex="-1" role="dialog">
-               <div class="modal-dialog" role="document">
+               <div class="modal-dialog modal-sm" role="document">
                  <div class="modal-content">
                    <div class="modal-header">
                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                     <h4 class="modal-title">Success</h4>
+                     <h4 class="modal-title">Transaction Result</h4>
                    </div>
                    <div class="modal-body">
-                     <h2 class='text-center'>Transaction successful</h2>
+                     <h5 class='text-center'>
+                       <div id="ajaxResult"></div>
+                     </h5>
                    </div>
                    <div class="modal-footer">
                      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -119,7 +121,7 @@
 
 
              <div class="row">
-               <div class="col-xs-6">Taxes 7.65%</div>
+               <div class="col-xs-6">Taxes {{taxRate}}%</div>
                <div id="taxes" class="col-xs-6 text-right"></div>
              </div>
              <div class="row">
@@ -139,6 +141,7 @@
   var discount=0.0;
   var taxes=0.0;
   function calculate(){
+    var taxRate={{taxRate}};
     subTotal=0.0;
     var prices=$(".prices");
     $.each(prices, function(key, value){
@@ -147,8 +150,8 @@
     });
     $("#subTotal").html(subTotal.toFixed(2));
     subTotal = subTotal - discount;
-    taxes=subTotal*.0765;
-    total=(subTotal*.0765)+subTotal;
+    taxes=subTotal*(taxRate/100);
+    total=taxes+subTotal;
 
     $("#total").html(total.toFixed(2));
     $("#taxes").html("-"+taxes.toFixed(2));
@@ -158,8 +161,9 @@
   $(".selStylist").click(function(){
     var stylistName=$(this).attr("sname");
     var html;
+    var ptype= $(this).attr("ptype");
     var stylistId=$(this).attr("stylistId");
-    html=createToBeSubmitted(stylistName, stylistId, "stylist");
+    html=createToBeSubmitted(stylistName, stylistId, "stylist", ptype);
     $("#toBeSubmitted").append(html);
     $(".removeItem").unbind();
     $(".removeItem").click(function(){
@@ -174,8 +178,9 @@
     var itemId=$(this).attr("id");
     var pname=$(this).attr("pname");
     var price=$(this).attr("price");
+    var ptype= $(this).attr("ptype");
 
-    html=createToBeSubmitted(pname, itemId, price);
+    html=createToBeSubmitted(pname, itemId, price, ptype);
     $("#toBeSubmitted").append(html);
 
 
@@ -194,10 +199,10 @@
     var pname=$(this).attr("pname");
     var itemId=$(this).attr("itemId");
     var price= $("#custom"+itemId).val();
-
+    var ptype= $(this).attr("ptype");
     $(".removeItem").unbind();
     //$("#toBeSubmitted").append("<div class='addedItem'><i class='glyphicon glyphicon-remove removeItem btn-danger'></i>&nbsp;"+item+"&nbsp;<input name='"+item+"' class='cutomPrice'/></div>");
-    html=createToBeSubmitted(pname, itemId, price);
+    html=createToBeSubmitted(pname, itemId, price, ptype);
     $("#toBeSubmitted").append(html);
 
     $(".removeItem").click(function(){
@@ -227,8 +232,10 @@
          name: $(el).attr("itemName"),
          id: $(el).attr("itemId"),
          price: $(el).attr("itemPrice"),
+         ptype: $(el).attr("ptype"),
          isStylist: isST
       };
+      console.log(itemsToSubmit[j]);
       //str=$.param(itemsToSubmit[0]);
       //itemsToSubmit[j]=$(el).html();
       //str+="items[]="+addedItem;
@@ -258,16 +265,16 @@
       },
       success: function(callback) {
           var result = JSON.parse(callback);
-          if (result.success) {
-
-            $("#toBeSubmitted").html("");
-            calculate();
-            $("#successModal").modal("show");
-
+            if (result.success) {
+              $("#toBeSubmitted").html("");
+              calculate();
+              $("#ajaxResult").html("Success! The transaction has completed.");
+              $("#successModal").modal("show");
+            }else {
+                $("#ajaxResult").html("Sorry, "+result.fail+" is out of stock<br /> please adjust the invoice.");
+                $("#successModal").modal("show");
+            }
           }
-
-      }
-
     });
 
     //console.log(result);
@@ -275,14 +282,14 @@
     //console.log(jQuery.param(JSON.stringify(itemsToSubmit)));
 
   });
-  function createToBeSubmitted(pname, itemId, price){
+  function createToBeSubmitted(pname, itemId, price, ptype){
     var st="";
     if (price == "stylist"){
       st="stylist='true'";
       price=0.0;
     }
     var html="";
-    html+="<div class='addItem' "+st+" itemName='"+pname+"' itemId='"+itemId+"' itemPrice='"+price+"'>";
+    html+="<div ptype='"+ptype+"' class='addItem' "+st+" itemName='"+pname+"' itemId='"+itemId+"' itemPrice='"+price+"'>";
     html+="<div class='row'>";
     html+="<div class='col-xs-2'><i class='glyphicon glyphicon-remove removeItem btn-danger'></i></div>";
     html+="<div class='col-xs-6'><span>"+pname+"</span></div>";
@@ -313,7 +320,6 @@
       discount=number;
     }
     else {
-     alert("test");
      discount = (subTotal * (number/100));
     }
     $("#myModal").modal("hide");
