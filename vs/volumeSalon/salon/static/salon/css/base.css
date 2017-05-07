@@ -1,9 +1,8 @@
-
 @import url(https://fonts.googleapis.com/css?family=Open+Sans|Candal);
 
 body
 {
-	background-color: #9966FF;
+	background-color: #884dff;
 	color: #000;
 	width: 700px;
 	margin-left: auto;
@@ -13,16 +12,29 @@ body
 	margin-top: 0px;
 
 }
+.spacer
+{
+	height: 50px;
+	background-color: pink;
+	display:block;
+}
+
+#spacerFooter
+{
+	height: 300px;
+	display:block;
+	margin: 100px;
+}
 
 header
 {
-    font-family: Candal, "Trebuchet MS", "Helvetica", sans-serif;
-    font-size: 3em;
-    height: 150px;
-    background-color: #9966FF;
+  font-family: Candal, "Trebuchet MS", "Helvetica", sans-serif;
+  font-size: 3em;
+  height: 150px;
+  background-color: #9933ff;
 	color: white;
 	text-align: center;
-    background-image: url("../img/salon.JPG");
+  background-image: url("salon/static/img/salon.JPG");
 	background-size: 100% 100%;
 	line-height: 100px;
 	opacity: 0.8;
@@ -52,7 +64,7 @@ nav ul li
 
 nav ul li a:link, nav ul li a:visited
 {
-	width: 120px;
+	/*width: 120px;*/
 	display: block;
 	/*background-color: #B24700;*/
 	margin-left: 0px;
@@ -91,9 +103,15 @@ nav ul li a:hover
 
 p
 {
-	text-align: left;
+	text-align: center;
 	text-indent: 20px;
 	margin-bottom: 0px;
+}
+
+a
+{
+	font-size: 9pt;
+	text-align: center;
 }
 
 footer
@@ -118,7 +136,6 @@ div#loginInfo
 {
 	text-align: right;
 	font-size: 16px;
-	/*line-height: 75px;*/
 	padding-right: 10px;
 	position: relative;
 	top: -130px;
@@ -172,19 +189,22 @@ table
 table, td, th
 {
 	border-style: solid;
-	border-width: 0px;
-	border-color: red;
+	border-width: 2px;
+	border-color: black;
+	padding-left: .2cm;
+	font-size: 10pt;
 }
+
 
 tr.heading
 {
-	background-color: black;
+	background-color: #black;
 	color: white;
 }
 
 tr:nth-child(even)
 {
-	background-color: #D6DAE7;
+	background-color: #666699;
 }
 
 td.rightAlign
@@ -208,11 +228,16 @@ h2
 
 footer a:link, footer a:visited
 {
-	color: white;
+	color: grey;
 	text-decoration: none;
+	font-size: 10pt;
 }
 
 footer a:hover
 {
 	text-decoration: underline;
+}
+
+i {
+  cursor: pointer
 }
